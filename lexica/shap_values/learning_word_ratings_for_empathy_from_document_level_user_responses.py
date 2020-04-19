@@ -19,7 +19,7 @@ from tensorflow.keras import regularizers
 
 import shap
 
-VISUALIZE_MODEL=False
+VISUALIZE_MODEL=True
 
 if not os.path.exists("empathic_reactions"):
     os.system("git clone https://github.com/wwbp/empathic_reactions")
@@ -39,7 +39,8 @@ from modeling.embedding import Embedding
 embs = Embedding.from_fasttext_vec(
     path='./crawl-300d-2M.vec.zip',
     zipped=True,
-    file='crawl-300d-2M.vec')
+    file='crawl-300d-2M.vec', 
+    vocab_limit=100_000)
 
 """##Now we start to setup the model finally"""
 
@@ -128,7 +129,7 @@ from time import time
 start = time()
 model.fit(FEATURES_MATRIX, 
 		  empathic_reactions_df['empathy'],
-		  epochs=50,
+		  epochs=20,
 		  batch_size=32, 
 		  validation_split=.1)
 print(f'Seconds: {time()-start}')
@@ -137,7 +138,7 @@ print(f'Seconds: {time()-start}')
 **WARNING: This code is only meant as a starting point!**
 """
 
-explainer = shap.DeepExplainer(model, FEATURES_MATRIX[:200])
+explainer = shap.DeepExplainer(model, FEATURES_MATRIX[:50])
 
 word_idx_matrix = np.zeros((empathic_reactions_df['essay'].shape[0], TIMESTEPS), dtype=int)
 tokenized_essays = empathic_reactions_df['essay'].apply(word_tokenize)
