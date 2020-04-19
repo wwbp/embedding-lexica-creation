@@ -18,4 +18,10 @@ Some quick instructions on how to setup and run in a virtual environment
  - install requirement `pip install -r requirements.txt`
  - now you are ready to run `python learning_word_ratings_for_empathy_from_document_level_user_responses.py`
  
+ ## Model visualization
+ In order to plot the model you'll [need graphviz](https://datascience.stackexchange.com/questions/37428/graphviz-not-working-when-imported-inside-pydotplus-graphvizs-executables-not).
+ The set the variable VISUALIZE_MODEL to True in the python file.
+ 
+ 
+ ---
  <a name="venvpath">1</a>: You may prefer to change the virtual environment directory path `~/venvs/shap-lexica-creation`
