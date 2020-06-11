@@ -7,12 +7,21 @@ import torch.nn as nn
 class CNN(nn.Module):
     def __init__(self, max_seq_length, embedding_size, dropout):
         super(CNN, self).__init__()
+        
         self.conv1 = nn.Conv1d(max_seq_length, 100 ,1)
         self.conv2 = nn.Conv1d(max_seq_length, 100, 2)
         self.conv3 = nn.Conv1d(max_seq_length, 100, 3)
         self.pooling1 = nn.AvgPool1d(embedding_size)
         self.pooling2 = nn.AvgPool1d(embedding_size-1)
         self.pooling3 = nn.AvgPool1d(embedding_size-2)
+        '''
+        self.conv1 = nn.Conv1d(embedding_size, 100 ,1)
+        self.conv2 = nn.Conv1d(embedding_size, 100, 2)
+        self.conv3 = nn.Conv1d(embedding_size, 100, 3)
+        self.pooling1 = nn.AvgPool1d(max_seq_length)
+        self.pooling2 = nn.AvgPool1d(max_seq_length-1)
+        self.pooling3 = nn.AvgPool1d(max_seq_length-2)
+        '''
         self.fc1 = nn.Linear(300, 128)
         self.fc2 = nn.Linear(128,1)
         self.dropout = nn.Dropout(dropout)
@@ -20,6 +29,7 @@ class CNN(nn.Module):
         self.criterion = nn.MSELoss()
         
     def forward(self, word_embeddings, values=None):
+        #word_embeddings=word_embeddings.permute(0,2,1)
         x = self.dropout(word_embeddings)
         logging.debug(x.size())
         
@@ -45,13 +55,13 @@ class CNN(nn.Module):
         z = torch.relu(self.fc1(feature))
         z_drop = self.dropout(z)
         
-        outputs = self.fc2(z_drop).flatten()
+        outputs = self.fc2(z_drop)
         
         if values is not None:
-            loss = self.criterion(outputs, values)
+            loss = self.criterion(outputs, values.view(-1,1))
             
             outputs = (loss, outputs)
-            logging.info(outputs)
-            logging.info(values)
+            #logging.info(outputs)
+            #logging.info(values)
         return outputs
         
