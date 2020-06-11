@@ -66,7 +66,6 @@ def get_cnn(input_shape, num_outputs, num_filters, learning_rate, dropout_conv, 
 	embedding_dim=input_shape[1]
 	sequence_length=input_shape[0]
 
-	
 
 	l2_strength=.001
 
