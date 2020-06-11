@@ -104,7 +104,7 @@ def cnn_train(dataset):
 
             loss, logits = model(b_word_embeddings, b_labels)
 
-            total_train_loss += loss.item()*args.train_batch_size
+            total_train_loss += loss.item()*b_word_embeddings.size()[0]
             
             logits = logits.detach().to('cpu').numpy()
             label_ids = b_labels.to('cpu').numpy()
@@ -121,7 +121,7 @@ def cnn_train(dataset):
             scheduler.step()
 
         # Calculate the average loss over all of the batches.
-        avg_train_loss = total_train_loss / len(dataloader)
+        avg_train_loss = total_train_loss / len(dataset)
         
         # Calculate the Pearson Correlation
         pearson, _ = stats.pearsonr(np.concatenate(prediction_train).flatten(), np.concatenate(true_values_train))             
@@ -158,9 +158,9 @@ def get_word_rating(model, input_ids, word_embeddings, attention_masks, tokenize
     word2values = {}
     exclude = ['[CLS]', '[SEP]', '[PAD]']
     
-    input_ids = torch.masked_select(input_ids, attention_masks)
+    input_ids = torch.masked_select(input_ids, attention_masks.bool())
     words = tokenizer.convert_ids_to_tokens(input_ids)
-    shap_values = torch.masked_select(shap_values, attention_masks)
+    shap_values = torch.masked_select(shap_values, attention_masks.bool())
     
     for index, word in enumerate(words):
         if word not in exclude:
@@ -169,7 +169,7 @@ def get_word_rating(model, input_ids, word_embeddings, attention_masks, tokenize
             else:
                 word2values[word].append(shap_values[index])
     
-    lexicon = {'Word':[], 'Value:': []}
+    lexicon = {'Word':[], 'Value': []}
     for word in word2values:
         lexicon['Word'].append(word)
         lexicon['Value'].append(np.mean(word2values[word]))
