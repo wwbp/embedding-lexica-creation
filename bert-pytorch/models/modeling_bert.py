@@ -1106,12 +1106,12 @@ class BertForSequenceClassification(BertPreTrainedModel):
     @add_start_docstrings_to_callable(BERT_INPUTS_DOCSTRING)
     def forward(
         self,
-        inputs_embeds=None,
+        input_ids=None,
         attention_mask=None,
         token_type_ids=None,
         position_ids=None,
         head_mask=None,
-        input_ids=None,
+        inputs_embeds=None,
         labels=None,
     ):
         """
