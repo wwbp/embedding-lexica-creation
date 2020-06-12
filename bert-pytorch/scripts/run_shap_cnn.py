@@ -13,6 +13,7 @@ from transformers import BertTokenizer
 from transformers import AdamW, get_linear_schedule_with_warmup
 
 from utils.utils import get_dataset
+from utils.bert_utils import get_word_embeddings
 from models.cnn import CNN
 from models.modeling_bert import BertForSequenceClassification
 
@@ -114,7 +115,7 @@ def cnn_train(dataset):
 
             # Perform a backward pass to calculate the gradients.
             loss.backward()
-
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             optimizer.step()
 
             # Update the learning rate.
@@ -215,10 +216,11 @@ if __name__=="__main__":
     except:
         logging.warning("Tokenizer loading failed")
     
-    bert_model = BertForSequenceClassification.from_pretrained(args.model)
+    bert_model = BertForSequenceClassification.from_pretrained(args.model).to(device)
     
     input_ids, attention_masks, values = get_dataset(data, values, tokenizer, args.max_seq_length)
-    word_embeddings = bert_model.get_word_embeddings(input_ids).detach()
+    word_embeddings = get_word_embeddings(bert_model, input_ids, attention_masks, args.train_batch_size).to('cpu')
+    logging.debug(word_embeddings.size())
     dataset = TensorDataset(word_embeddings, values)
     
     model = cnn_train(dataset)
