@@ -29,27 +29,27 @@ def run_train(device: torch.device, args):
     # Load the BERT tokenizer.
     logging.info('Loading BERT tokenizer...')
     tokenizer = BertTokenizer.from_pretrained(args.model, do_lower_case=args.do_lower_case)
-
-    # Load BertForSequenceClassification, the pretrained BERT model with a single 
-    # linear classification layer on top. 
-    model = BertForSequenceClassification.from_pretrained(
-        args.model,
-        num_labels = 1, # Set 1 to do regression.
-        output_attentions = False, # Whether the model returns attentions weights.
-        output_hidden_states = True, # Whether the model returns all hidden-states.
-        )
-
-    model.to(device)
-    
-    optimizer = AdamW(model.parameters(),
-                lr = args.lr, # args.learning_rate - default is 5e-5
-                eps = args.epsilon # args.adam_epsilon  - default is 1e-8.
-                )
     
     input_ids, attention_masks, values = get_dataset(data, values, tokenizer, args.max_seq_length)
     dataset = TensorDataset(input_ids, attention_masks, values)
 
     if args.k_fold == 0:
+        # Load BertForSequenceClassification, the pretrained BERT model with a single 
+        # linear classification layer on top. 
+        model = BertForSequenceClassification.from_pretrained(
+            args.model,
+            num_labels = 1, # Set 1 to do regression.
+            output_attentions = False, # Whether the model returns attentions weights.
+            output_hidden_states = True, # Whether the model returns all hidden-states.
+            )
+
+        model.to(device)
+        
+        optimizer = AdamW(model.parameters(),
+                    lr = args.lr, # args.learning_rate - default is 5e-5
+                    eps = args.epsilon # args.adam_epsilon  - default is 1e-8.
+                    )
+        
         # Create a 90-10 train-validation split.
 
         # Calculate the number of samples to include in each set.
@@ -250,6 +250,12 @@ def run_train(device: torch.device, args):
                 )
 
             model.to(device)
+            
+            optimizer = AdamW(model.parameters(),
+                              lr = args.lr, # args.learning_rate - default is 5e-5
+                              eps = args.epsilon # args.adam_epsilon  - default is 1e-8.
+                              )
+            
             # Divide the dataset by randomly selecting samples.
             split = k_fold_split(dataset, args.k_fold)
             train_dataset, val_dataset = next(split)
