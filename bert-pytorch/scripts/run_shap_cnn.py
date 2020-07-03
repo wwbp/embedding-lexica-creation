@@ -1,6 +1,7 @@
 import argparse
 import logging
 import copy
+import os
 
 import numpy as np
 import pandas as pd
@@ -14,12 +15,15 @@ from transformers import AdamW, get_linear_schedule_with_warmup
 
 from utils.utils import get_dataset
 from utils.bert_utils import get_word_embeddings
+import utils.feature_extraction as fe
+from utils.embedding import Embedding
 from models.cnn import CNN
+from models.ffn import FFN
 from models.modeling_bert import BertForSequenceClassification
 
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S',
-                    level=logging.INFO)
+                    level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -27,8 +31,11 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("--data", required=True, type=str, help="The input data. Should be .csv file.")
 parser.add_argument("--task", required=True, type=str, help="The task for empathy or distress.")
+parser.add_argument("--model", required=True, type=str, help="Use CNN or FFN.")
+parser.add_argument("--if_bert_embedding", type=bool, default=False, help="If use bert embedding.")
+parser.add_argument("--embedding_path", type=str, help="Fasttext embedding file.")
 parser.add_argument("--train_batch_size", type=int, default=32, help="Total batch size for training.")
-parser.add_argument("--model", required=True, type=str, help="The pretrained Bert model we choose.")
+parser.add_argument("--bert_model", type=str, help="The pretrained Bert model we choose.")
 parser.add_argument("--max_seq_length", type=int, default=128,
                     help="The maximum total input sequence length after WordPiece tokenization. "
                     "Sequences longer than this will be truncated, and sequences shorter "
@@ -54,7 +61,13 @@ def cnn_train(dataset):
         batch_size = args.train_batch_size)
     
     try:
-        model = CNN(args.max_seq_length, dataset[0][0].size()[-1], args.dropout)
+        if args.model == 'CNN':
+            if args.if_bert_embedding:
+                model = CNN(args.max_seq_length-1, dataset[0][0].size()[-1], args.dropout)
+            else:
+                model = CNN(args.max_seq_length, dataset[0][0].size()[-1], args.dropout)
+        else:
+            model = FFN(dataset[0][0].size()[-1], args.dropout)
     except:
         logging.warning("Model loading failed")
     
@@ -153,23 +166,36 @@ def get_word_rating(model, input_ids, word_embeddings, attention_masks, tokenize
     
     logging.info('Getting Shapley values')
     explainer = DeepExplainer(model, word_embeddings[:50])
-    shap_values = torch.from_numpy(explainer.shap_values(word_embeddings))[0].mean(axis=-1)
+    shap_values = torch.from_numpy(explainer.shap_values(word_embeddings)).mean(axis=-1)
+    logging.debug("---------------------")
+    logging.debug(shap_values.size())
     logging.info("Calculated done!")
     
     word2values = {}
     exclude = ['[CLS]', '[SEP]', '[PAD]']
     
-    input_ids = torch.masked_select(input_ids, attention_masks.bool())
-    words = tokenizer.convert_ids_to_tokens(input_ids)
-    shap_values = torch.masked_select(shap_values, attention_masks.bool())
+    if args.model == 'CNN':
+        input_ids = torch.masked_select(input_ids, attention_masks.bool())
+        words = tokenizer.convert_ids_to_tokens(input_ids)
+        shap_values = torch.masked_select(shap_values, attention_masks.bool())
+        
+        for index, word in enumerate(words):
+            if word not in exclude:
+                if word not in word2values:
+                    word2values[word] = [shap_values[index]]
+                else:
+                    word2values[word].append(shap_values[index])
     
-    for index, word in enumerate(words):
-        if word not in exclude:
-            if word not in word2values:
-                word2values[word] = [shap_values[index]]
-            else:
-                word2values[word].append(shap_values[index])
-    
+    elif args.model == 'FFN':
+        for index, sentence in enumerate(input_ids):
+            sentence = tokenizer.convert_ids_to_tokens(sentence)
+            for word in sentence:
+                if word not in exclude:
+                    if word not in word2values:
+                        word2values[word] = [shap_values[index]]
+                    else:
+                        word2values[word].append(shap_values[index])
+        
     lexicon = {'Word':[], 'Value': []}
     for word in word2values:
         lexicon['Word'].append(word)
@@ -209,18 +235,29 @@ if __name__=="__main__":
     data = corpus.essay.values
     values = corpus[args.task].values
     
-    # Load the BERT tokenizer.
-    logging.info('Loading BERT tokenizer...')
-    try:
-        tokenizer = BertTokenizer.from_pretrained(args.tokenizer)
-    except:
-        logging.warning("Tokenizer loading failed")
-    
-    bert_model = BertForSequenceClassification.from_pretrained(args.model).to(device)
-    
-    input_ids, attention_masks, values = get_dataset(data, values, tokenizer, args.max_seq_length)
-    word_embeddings = get_word_embeddings(bert_model, input_ids, attention_masks, args.train_batch_size).to('cpu')
+    logging.info(args.if_bert_embedding)
+    logging.debug(os.path.exists(args.gold_word))
+    if args.if_bert_embedding:
+        # Load the BERT tokenizer.
+        logging.info('Loading BERT tokenizer...')
+        try:
+            tokenizer = BertTokenizer.from_pretrained(args.tokenizer)
+        except:
+            logging.warning("Tokenizer loading failed")
+        bert_model = BertForSequenceClassification.from_pretrained(args.bert_model).to(device)
+        
+        input_ids, attention_masks, values = get_dataset(data, values, tokenizer, args.max_seq_length)
+        word_embeddings = get_word_embeddings(bert_model, input_ids, attention_masks, 
+                                              args.train_batch_size, args.model).to('cpu')
+    else:
+        embs=embs = Embedding.from_fasttext_vec(path=args.embedding_path,zipped=True,file='crawl-300d-2M.vec')
+        values = torch.tensor(values).float()
+        if args.model == 'CNN':
+            word_embeddings = torch.from_numpy(fe.embedding_matrix(data, embs, args.max_seq_length)).float()
+        elif args.model == 'FFN':
+            word_embeddings = torch.from_numpy(fe.embedding_centroid(data, embs)).float()
     logging.debug(word_embeddings.size())
+    logging.debug(os.path.exists(args.gold_word))
     dataset = TensorDataset(word_embeddings, values)
     
     model = cnn_train(dataset)

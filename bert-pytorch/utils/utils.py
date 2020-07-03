@@ -1,6 +1,8 @@
 import datetime
 
 import torch
+from torch.utils.data import Subset
+from torch._utils import _accumulate
 
 
 def format_time(elapsed):
@@ -42,3 +44,16 @@ def get_dataset(input, values, tokenizer, max_seq_length):
     values = torch.tensor(values).float()
     
     return input_ids, attention_masks, values
+
+
+def k_fold_split(dataset, k):
+    lengths = [int(len(dataset)/k)]*(k-1)
+    lengths.append(len(dataset)-sum(lengths))
+    
+    indices = torch.randperm(sum(lengths)).tolist()
+    subsets = [indices[offset - length:offset] for offset, length in zip(_accumulate(lengths), lengths)]
+    
+    for i in range(k):
+        train_indices = [indice for sub_indices in subsets[0:i]+subsets[i+1:] for indice in sub_indices]
+        test_indices = subsets[i]
+        yield Subset(dataset, train_indices), Subset(dataset, test_indices)
