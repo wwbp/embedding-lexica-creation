@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader, SequentialSampler, TensorDataset
 logger = logging.getLogger(__name__)
 
 
-def get_word_embeddings(model, input_ids, attention_masks, batch_size):
+def get_word_embeddings(model, input_ids, attention_masks, batch_size, train_model, initial=False):
     dataset = TensorDataset(input_ids, attention_masks)    
     dataloader = DataLoader(dataset, sampler=SequentialSampler(dataset), batch_size=batch_size)
     
@@ -24,7 +24,14 @@ def get_word_embeddings(model, input_ids, attention_masks, batch_size):
         b_input_masks = batch[1].to(device)
         
         with torch.no_grad():
-            word_embedding = model(b_input_ids, b_input_masks)[1][-1].detach()
+            if initial:
+                word_embedding = model.get_word_embeddings(b_input_ids).detach()
+            else:
+                if train_model == 'CNN':
+                    word_embedding = model(b_input_ids, b_input_masks)[1][-1][:,1:].detach()
+                elif train_model == 'FFN':
+                    word_embedding = model(b_input_ids, b_input_masks)[1][-1][:,0].detach()
+                    logger.debug(word_embedding.size())
             word_embeddings.append(word_embedding)
             
     return torch.cat(word_embeddings)

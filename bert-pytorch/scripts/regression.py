@@ -23,6 +23,7 @@ parser.add_argument("--task", required=True, type=str,
 parser.add_argument("--do_train", type=bool, default=False, help="Whether to run training.")
 parser.add_argument("--do_predict", type=bool, default=False, 
                     help="Whether to run the model in inference mode on the test set.")
+parser.add_argument("--k_fold", type=int, default=0, help="Whether to use k-fold validation.z")
 parser.add_argument("--model", required=True, type=str, 
                     help="The pretrained Bert model we choose.")
 parser.add_argument("--do_lower_case", type=bool, default=True,
