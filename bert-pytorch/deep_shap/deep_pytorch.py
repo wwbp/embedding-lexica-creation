@@ -1,9 +1,13 @@
+from tqdm import tqdm
+import logging
+import time
 import numpy as np
 import warnings
 from shap.explainers.explainer import Explainer
 from distutils.version import LooseVersion
 torch = None
 
+logger = logging.getLogger(__name__)
 
 class PyTorchDeepExplainer(Explainer):
 
@@ -19,7 +23,7 @@ class PyTorchDeepExplainer(Explainer):
         self.multi_input = False
         if len(data) > 1:
             self.multi_input = True
-        self.data = data['inputs_embeds']
+        self.data = [data['inputs_embeds'].to('cpu')]
         self.layer = None
         self.input_handle = None
         self.interim = False
@@ -96,8 +100,12 @@ class PyTorchDeepExplainer(Explainer):
 
     def gradient(self, idx, inputs):
         self.model.zero_grad()
-        X = {'inputs_embeds': inputs[0]}
-        outputs = self.model(**X)
+        X = {'inputs_embeds': inputs[0].requires_grad_()}
+        outputs = []
+        for i in range(2):
+            x = {'inputs_embeds': X['inputs_embeds'][i*50:i+50].to(self.device)}
+            outputs.append(self.model(**x)[0])
+        outputs = torch.cat(outputs)
         selected = [val for val in outputs[:, idx]]
         grads = []
         if self.interim:
@@ -115,13 +123,13 @@ class PyTorchDeepExplainer(Explainer):
             return grads, [i.detach().cpu().numpy() for i in interim_inputs]
         else:
             for idx, x in enumerate(X):
-                grad = torch.autograd.grad(selected, x,
+                grad = torch.autograd.grad(selected, X[x].to(self.device),
                                            retain_graph=True if idx + 1 < len(X) else None,
                                            allow_unused=True)[0]
                 if grad is not None:
                     grad = grad.cpu().numpy()
                 else:
-                    grad = torch.zeros_like(X[idx]).cpu().numpy()
+                    grad = torch.zeros_like(X[x]).cpu().numpy()
                 grads.append(grad)
             return grads
 
@@ -132,7 +140,7 @@ class PyTorchDeepExplainer(Explainer):
 
         X = []
         for i in inputs.values():
-            X.append(i)
+            X.append(i.detach())
         if ranked_outputs is not None and self.multi_output:
             with torch.no_grad():
                 model_output_values = self.model(**inputs)
@@ -165,7 +173,7 @@ class PyTorchDeepExplainer(Explainer):
             else:
                 for k in range(len(X)):
                     phis.append(np.zeros(X[k].shape))
-            for j in range(X[0].shape[0]):
+            for j in tqdm(range(X[0].shape[0])):
                 # tile the inputs to line up with the background data samples
                 tiled_X = [X[l][j:j + 1].repeat(
                                    (self.data[l].shape[0],) + tuple([1 for k in range(len(X[l].shape) - 1)])) for l
@@ -186,7 +194,7 @@ class PyTorchDeepExplainer(Explainer):
                         phis[l][j] = (sample_phis[l][self.data[l].shape[0]:] * (x[l] - data[l])).mean(0)
                 else:
                     for l in range(len(X)):
-                        phis[l][j] = (torch.from_numpy(sample_phis[l][self.data[l].shape[0]:]).to(self.device) * (X[l][j: j + 1] - self.data[l])).cpu().numpy().mean(0)
+                        phis[l][j] = (torch.from_numpy(sample_phis[l][self.data[l].shape[0]:]) * (X[l][j: j + 1] - self.data[l])).numpy().mean(0)
             output_phis.append(phis[0] if not self.multi_input else phis)
         # cleanup; remove all gradient handles
         for handle in handles:

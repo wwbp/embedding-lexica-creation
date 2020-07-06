@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader, SequentialSampler, TensorDataset
 logger = logging.getLogger(__name__)
 
 
-def get_word_embeddings(model, input_ids, attention_masks, batch_size, train_model, initial=False):
+def get_word_embeddings(model, input_ids, attention_masks, batch_size, train_model=None, initial=False):
     dataset = TensorDataset(input_ids, attention_masks)    
     dataloader = DataLoader(dataset, sampler=SequentialSampler(dataset), batch_size=batch_size)
     
