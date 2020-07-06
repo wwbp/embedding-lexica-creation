@@ -27,34 +27,26 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("--data", required=True, type=str, help="The input data. Should be .csv file.")
 parser.add_argument("--task", required=True, type=str, help="The task for empathy or distress.")
-parser.add_argument("--train_batch_size", type=int, default=32, help="Total batch size for training.")
 parser.add_argument("--model", required=True, type=str, help="The pretrained Bert model we choose.")
 parser.add_argument("--max_seq_length", type=int, default=128,
                     help="The maximum total input sequence length after WordPiece tokenization. "
                     "Sequences longer than this will be truncated, and sequences shorter "
                     "than this will be padded.")
-parser.add_argument("--dropout", type=float, default=0.5, help="Dropout for CNN.")
-parser.add_argument("--lr", type=float, default=1e-5, help="The initial learning rate for Adam.")
-parser.add_argument("--epsilon", type=float, default=1e-8, help="Decay rate for Adam.")
-parser.add_argument("--num_warmup_steps", type=int, default=0, help="Steps of training to perform linear learning rate warmup for.")
-parser.add_argument("--num_train_epochs", type=int, default=200, help="Total number of training epochs to perform.")
+parser.add_argument("--train_batch_size", type=int, default=32, help="Total batch size for training.")
 parser.add_argument("--output", type=str, help="The output directory where the lexicon will be written.")
 parser.add_argument("--tokenizer", type=str, help="Dir to tokenizer for prediction.")
-parser.add_argument("--early_stop", type=bool, default=False, help="Whether set early stopping based on F-score.")
-parser.add_argument("--patience", type=int, default=7, help="patience for early stopping.")
-parser.add_argument("--delta", type=float, default=0, help="delta for early stopping.")
 parser.add_argument("--gold_word", type=str, default=None, help="Gold word rating for evaluation.")
 
 args = parser.parse_args() 
 
 
-def get_word_rating(model, input_ids, word_embeddings, attention_masks, tokenizer ,gold):
+def get_word_rating(model, input_ids, word_embeddings, attention_masks, tokenizer ,gold, device):
     
     logging.info('Getting lexicon')
     
     logging.info('Getting Shapley values')
-    explainer = DeepExplainer(model, {'inputs_embeds':word_embeddings[:50]})
-    shap_values = torch.from_numpy(explainer.shap_values({'inputs_embeds':word_embeddings}))[0].mean(axis=-1)
+    explainer = DeepExplainer(model, {'inputs_embeds':word_embeddings[:50].to(device)})
+    shap_values = torch.from_numpy(explainer.shap_values({'inputs_embeds':word_embeddings})).mean(axis=-1)
     logging.info("Calculated done!")
     
     word2values = {}
@@ -120,9 +112,7 @@ if __name__=="__main__":
     bert_model = BertForSequenceClassification.from_pretrained(args.model).to(device)
     
     input_ids, attention_masks, values = get_dataset(data, values, tokenizer, args.max_seq_length)
-    word_embeddings = get_word_embeddings(bert_model, input_ids, attention_masks, args.train_batch_size, True).to('cpu')
+    word_embeddings = get_word_embeddings(bert_model, input_ids, attention_masks, args.train_batch_size, initial=True).to('cpu')
     logging.debug(word_embeddings.size())
     
-    bert_model.to('cpu')
-    
-    get_word_rating(bert_model, input_ids, word_embeddings, attention_masks, tokenizer, args.gold_word)
+    get_word_rating(bert_model, input_ids, word_embeddings, attention_masks, tokenizer, args.gold_word, device)
