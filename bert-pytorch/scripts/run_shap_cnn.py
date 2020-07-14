@@ -9,7 +9,7 @@ from scipy import stats
 from shap import DeepExplainer
 
 import torch
-from torch.utils.data import DataLoader, RandomSampler, TensorDataset
+from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, TensorDataset, random_split
 from transformers import BertTokenizer
 from transformers import AdamW, get_linear_schedule_with_warmup
 
@@ -23,7 +23,7 @@ from models.modeling_bert import BertForSequenceClassification
 
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S',
-                    level=logging.DEBUG)
+                    level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -56,8 +56,17 @@ args = parser.parse_args()
 
 
 def cnn_train(dataset):
-    dataloader = DataLoader(
-        dataset, sampler = RandomSampler(dataset), 
+    train_size = int(0.8 * len(dataset))
+    val_size = len(dataset) - train_size
+    
+    train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+    
+    train_dataloader = DataLoader(
+        train_dataset, sampler = RandomSampler(train_dataset), 
+        batch_size = args.train_batch_size)
+    
+    validation_dataloader = DataLoader(
+        val_dataset, sampler = SequentialSampler(val_dataset), 
         batch_size = args.train_batch_size)
     
     try:
@@ -67,7 +76,7 @@ def cnn_train(dataset):
             else:
                 model = CNN(args.max_seq_length, dataset[0][0].size()[-1], args.dropout)
         else:
-            model = FFN(dataset[0][0].size()[-1], args.dropout)
+            model = FFN(dataset[0][0].size(-1), args.dropout)
     except:
         logging.warning("Model loading failed")
     
@@ -78,7 +87,7 @@ def cnn_train(dataset):
                 eps = args.epsilon # args.adam_epsilon  - default is 1e-8.
                 )
     
-    total_steps = len(dataloader) * args.num_train_epochs
+    total_steps = len(train_dataloader) * args.num_train_epochs
     
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=args.num_warmup_steps,
                                                 num_training_steps=total_steps)
@@ -100,7 +109,7 @@ def cnn_train(dataset):
         # For each batch of training data...
         prediction_train = []
         true_values_train = []
-        for step, batch in enumerate(dataloader):
+        for step, batch in enumerate(train_dataloader):
 
             # Unpack this training batch from our dataloader. 
             #
@@ -135,13 +144,47 @@ def cnn_train(dataset):
             scheduler.step()
 
         # Calculate the average loss over all of the batches.
-        avg_train_loss = total_train_loss / len(dataset)
+        avg_train_loss = total_train_loss / len(train_dataset)
         
         # Calculate the Pearson Correlation
         pearson, _ = stats.pearsonr(np.concatenate(prediction_train).flatten(), np.concatenate(true_values_train))             
 
         logging.info("  Average training loss: {0:.2f}".format(avg_train_loss))
         logging.info("  Pearson Correlation: {0:.2f}".format(pearson))
+        
+        logging.info("Running Validation...")
+        
+        model.eval()
+        
+        # Tracking variables 
+        total_eval_loss = 0
+        
+        # Evaluate data for one epoch
+        prediction_val = []
+        true_values_val = []
+        for batch in validation_dataloader:
+            
+            b_word_embeddings = batch[0].to(device)
+            b_labels = batch[1].to(device)
+            
+            with torch.no_grad():
+                loss, logits = model(b_word_embeddings, b_labels)
+                
+            total_eval_loss += loss.item()*b_word_embeddings.size(0)
+            
+            logits = logits.detach().to('cpu').numpy()
+            label_ids = b_labels.to('cpu').numpy()
+            
+            prediction_val.append(logits)
+            true_values_val.append(label_ids)
+            
+        avg_val_loss = total_eval_loss /len(val_dataset)
+        
+        pearson, _ = stats.pearsonr(np.concatenate(prediction_val).flatten(), np.concatenate(true_values_val))
+        logging.debug(prediction_val)
+        logging.debug(true_values_val)
+        logging.info("  Average validation loss: {0:.2f}".format(avg_val_loss))
+        logging.info("  Pearson Correlation: {0:.2f}".format(pearson))        
 
         if pearson < best_pearson+args.delta:
             count_num += 1
@@ -163,10 +206,12 @@ def cnn_train(dataset):
 def get_word_rating(model, input_ids, word_embeddings, attention_masks, tokenizer ,gold):
     
     logging.info('Getting lexicon')
+    input_ids = input_ids[:,1:]
+    attention_masks = attention_masks[:,1:]
     
     logging.info('Getting Shapley values')
     explainer = DeepExplainer(model, word_embeddings[:50])
-    shap_values = torch.from_numpy(explainer.shap_values(word_embeddings)).mean(axis=-1)
+    shap_values = torch.from_numpy(explainer.shap_values(word_embeddings))
     logging.debug("---------------------")
     logging.debug(shap_values.size())
     logging.info("Calculated done!")
@@ -175,6 +220,7 @@ def get_word_rating(model, input_ids, word_embeddings, attention_masks, tokenize
     exclude = ['[CLS]', '[SEP]', '[PAD]']
     
     if args.model == 'CNN':
+        shap_values = shap_values.mean(axis=-1)
         input_ids = torch.masked_select(input_ids, attention_masks.bool())
         words = tokenizer.convert_ids_to_tokens(input_ids)
         shap_values = torch.masked_select(shap_values, attention_masks.bool())
@@ -187,6 +233,20 @@ def get_word_rating(model, input_ids, word_embeddings, attention_masks, tokenize
                     word2values[word].append(shap_values[index])
     
     elif args.model == 'FFN':
+        shap_values = shap_values.view(input_ids.size(0), input_ids.size(1), -1).mean(axis=-1)
+        input_ids = torch.masked_select(input_ids, attention_masks.bool())
+        words = tokenizer.convert_ids_to_tokens(input_ids)
+        shap_values = torch.masked_select(shap_values, attention_masks.bool())
+        
+        for index, word in enumerate(words):
+            if word not in exclude:
+                if word not in word2values:
+                    word2values[word] = [shap_values[index]]
+                else:
+                    word2values[word].append(shap_values[index])
+    
+    '''
+    elif args.model == 'FFN':
         for index, sentence in enumerate(input_ids):
             sentence = tokenizer.convert_ids_to_tokens(sentence)
             for word in sentence:
@@ -195,6 +255,7 @@ def get_word_rating(model, input_ids, word_embeddings, attention_masks, tokenize
                         word2values[word] = [shap_values[index]]
                     else:
                         word2values[word].append(shap_values[index])
+    ''' 
         
     lexicon = {'Word':[], 'Value': []}
     for word in word2values:
@@ -214,7 +275,7 @@ def get_word_rating(model, input_ids, word_embeddings, attention_masks, tokenize
     
     logging.info('Writing to %s' % args.output)
     
-    lexicon_df.to_csv(args.output)
+    merge_df.to_csv(args.output)
     
     logging.info('Done!')
         
