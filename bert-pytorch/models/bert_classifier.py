@@ -7,13 +7,11 @@ import torch.nn as nn
 logger = logging.getLogger(__name__)
 
 
-class FFN(nn.Module):
+class Classifier(nn.Module):
     def __init__(self, embedding_size, dropout):
-        super(FFN, self).__init__()
+        super(Classifier, self).__init__()
         
-        self.fc1 = nn.Linear(embedding_size, 768)
-        self.fc2 = nn.Linear(768,1)
-        #self.fc3 = nn.Linear(128,1)
+        self.fc1 = nn.Linear(embedding_size, 1)
         self.dropout = nn.Dropout(dropout)
         
         self.criterion = nn.MSELoss()
@@ -35,15 +33,15 @@ class FFN(nn.Module):
     
     def forward(self, word_embeddings, values=None):
         #word_embeddings=word_embeddings.permute(0,2,1)
-        x = word_embeddings
+        x = self.dropout(word_embeddings)
         #logger.debug(x.size())
         
-        z1 = torch.tanh(self.fc1(x))
+        z1 = torch.relu(self.fc1(x))
         z1_drop = self.dropout(z1)
-        #z2 = torch.relu(self.fc2(z1_drop))
-        #z2_drop = self.dropout(z2)
+        z2 = torch.relu(self.fc2(z1_drop))
+        z2_drop = self.dropout(z2)
         
-        outputs = self.fc2(z1_drop)
+        outputs = self.fc3(z2_drop)
         
         if values is not None:
             loss = self.criterion(outputs, values.view(-1,1))

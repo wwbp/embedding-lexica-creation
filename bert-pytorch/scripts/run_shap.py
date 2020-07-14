@@ -46,15 +46,15 @@ def get_word_rating(model, input_ids, word_embeddings, attention_masks, tokenize
     
     logging.info('Getting Shapley values')
     explainer = DeepExplainer(model, {'inputs_embeds':word_embeddings[:50].to(device)})
-    shap_values = torch.from_numpy(explainer.shap_values({'inputs_embeds':word_embeddings})).mean(axis=-1)
+    shap_values = torch.from_numpy(explainer.shap_values({'inputs_embeds':word_embeddings[:5]})).sum(axis=-1)
     logging.info("Calculated done!")
     
     word2values = {}
     exclude = ['[CLS]', '[SEP]', '[PAD]']
     
-    input_ids = torch.masked_select(input_ids, attention_masks.bool())
+    input_ids = torch.masked_select(input_ids[:5], attention_masks[:5].bool())
     words = tokenizer.convert_ids_to_tokens(input_ids)
-    shap_values = torch.masked_select(shap_values, attention_masks.bool())
+    shap_values = torch.masked_select(shap_values, attention_masks[:5].bool())
     
     for index, word in enumerate(words):
         if word not in exclude:
@@ -63,25 +63,26 @@ def get_word_rating(model, input_ids, word_embeddings, attention_masks, tokenize
             else:
                 word2values[word].append(shap_values[index])
     
-    lexicon = {'Word':[], 'Value': []}
+    lexicon = {'Word':[], 'Value': [], 'Value_sum': []}
     for word in word2values:
         lexicon['Word'].append(word)
         lexicon['Value'].append(np.mean(word2values[word]))
+        lexicon['Value_sum'].append(np.sum(word2values[word]))
     
     lexicon_df = pd.DataFrame.from_dict(lexicon).sort_values(by='Value')
-    
+    logger.info(lexicon_df)
     if gold is not None:
         gold = pd.read_csv(gold, index_col=0)
         gold = gold[['Word', args.task+'.Mean.Sum']]
         
         merge_df = pd.merge(lexicon_df, gold, how='inner', on=['Word'])
-        
+        logger.info(merge_df)
         pearson, _ = stats.pearsonr(merge_df['Value'], merge_df[args.task+'.Mean.Sum'])
         logging.info("Pearson for word is %f" % pearson)
     
     logging.info('Writing to %s' % args.output)
     
-    lexicon_df.to_csv(args.output)
+    merge_df.to_csv(args.output)
     
     logging.info('Done!')
         

@@ -5,6 +5,7 @@ import numpy as np
 import warnings
 from shap.explainers.explainer import Explainer
 from distutils.version import LooseVersion
+from torch.cuda.amp import GradScaler
 torch = None
 
 logger = logging.getLogger(__name__)
@@ -98,14 +99,15 @@ class PyTorchDeepExplainer(Explainer):
                 except AttributeError:
                     pass
 
-    def gradient(self, idx, inputs):
+    def gradient(self, idx, inputs, scaler):
         self.model.zero_grad()
         X = {'inputs_embeds': inputs[0].requires_grad_()}
         outputs = []
         for i in range(2):
-            x = {'inputs_embeds': X['inputs_embeds'][i*50:i+50].to(self.device)}
+            x = {'inputs_embeds': X['inputs_embeds'][i*50:i*50+50].to(self.device)}
             outputs.append(self.model(**x)[0])
         outputs = torch.cat(outputs)
+        outputs = scaler.scale(outputs)
         selected = [val for val in outputs[:, idx]]
         grads = []
         if self.interim:
@@ -126,8 +128,11 @@ class PyTorchDeepExplainer(Explainer):
                 grad = torch.autograd.grad(selected, X[x].to(self.device),
                                            retain_graph=True if idx + 1 < len(X) else None,
                                            allow_unused=True)[0]
+                
                 if grad is not None:
+                    logger.info(torch.nonzero(grad))
                     grad = grad.cpu().numpy()
+                    logger.info(torch.nonzero(grad))
                 else:
                     grad = torch.zeros_like(X[x]).cpu().numpy()
                 grads.append(grad)
@@ -163,6 +168,8 @@ class PyTorchDeepExplainer(Explainer):
         if self.interim:
             self.add_target_handle(self.layer)
 
+        scaler = GradScaler()
+        
         # compute the attributions
         output_phis = []
         for i in range(model_output_ranks.shape[1]):
@@ -181,7 +188,8 @@ class PyTorchDeepExplainer(Explainer):
                 joint_x = [torch.cat((tiled_X[l], self.data[l]), dim=0) for l in range(len(X))]
                 # run attribution computation graph
                 feature_ind = model_output_ranks[j, i]
-                sample_phis = self.gradient(feature_ind, joint_x)
+                sample_phis = self.gradient(feature_ind, joint_x, scaler)
+                
                 # assign the attributions to the right part of the output arrays
                 if self.interim:
                     sample_phis, output = sample_phis

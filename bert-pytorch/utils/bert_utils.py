@@ -27,11 +27,10 @@ def get_word_embeddings(model, input_ids, attention_masks, batch_size, train_mod
             if initial:
                 word_embedding = model.get_word_embeddings(b_input_ids).detach()
             else:
-                if train_model == 'CNN':
-                    word_embedding = model(b_input_ids, b_input_masks)[1][-1][:,1:].detach()
-                elif train_model == 'FFN':
-                    word_embedding = model(b_input_ids, b_input_masks)[1][-1][:,0].detach()
-                    logger.debug(word_embedding.size())
+                word_embedding = model(b_input_ids, b_input_masks)[1][-1][:,1:].detach()
+                if train_model == 'FFN':
+                    word_embedding = word_embedding.view(word_embedding.size(0),-1)
+                logger.debug(word_embedding.size())
             word_embeddings.append(word_embedding)
             
     return torch.cat(word_embeddings)
