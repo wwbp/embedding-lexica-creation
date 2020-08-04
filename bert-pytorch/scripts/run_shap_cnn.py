@@ -10,7 +10,7 @@ from shap import DeepExplainer
 
 import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, TensorDataset, random_split
-from transformers import BertTokenizer
+from transformers import BertTokenizer, DistilBertTokenizer
 from transformers import AdamW, get_linear_schedule_with_warmup
 
 from utils.utils import get_dataset
@@ -20,6 +20,7 @@ from utils.embedding import Embedding
 from models.cnn import CNN
 from models.ffn import FFN
 from models.modeling_bert import BertForSequenceClassification
+from models.modeling_distilbert import DistilBertForSequenceClassification
 
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S',
@@ -32,6 +33,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--data", required=True, type=str, help="The input data. Should be .csv file.")
 parser.add_argument("--task", required=True, type=str, help="The task for empathy or distress.")
 parser.add_argument("--model", required=True, type=str, help="Use CNN or FFN.")
+parser.add_argument("--model_kind", required=True, type=str)
 parser.add_argument("--if_bert_embedding", type=bool, default=False, help="If use bert embedding.")
 parser.add_argument("--embedding_path", type=str, help="Fasttext embedding file.")
 parser.add_argument("--train_batch_size", type=int, default=32, help="Total batch size for training.")
@@ -301,12 +303,18 @@ if __name__=="__main__":
     if args.if_bert_embedding:
         # Load the BERT tokenizer.
         logging.info('Loading BERT tokenizer...')
-        try:
-            tokenizer = BertTokenizer.from_pretrained(args.tokenizer)
-        except:
-            logging.warning("Tokenizer loading failed")
-        bert_model = BertForSequenceClassification.from_pretrained(args.bert_model).to(device)
-        
+        if args.model_kind == 'bert':
+            try:
+                tokenizer = BertTokenizer.from_pretrained(args.tokenizer)
+            except:
+                logging.warning("Tokenizer loading failed")
+            bert_model = BertForSequenceClassification.from_pretrained(args.bert_model).to(device)
+        elif args.model_kind == 'distilbert':
+            try:
+                tokenizer = DistilBertTokenizer.from_pretrained(args.tokenizer)
+            except:
+                logging.warning("Tokenizer loading failed")
+            bert_model = DistilBertForSequenceClassification.from_pretrained(args.bert_model).to(device)
         input_ids, attention_masks, values = get_dataset(data, values, tokenizer, args.max_seq_length)
         word_embeddings = get_word_embeddings(bert_model, input_ids, attention_masks, 
                                               args.train_batch_size, args.model).to('cpu')

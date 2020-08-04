@@ -1,5 +1,5 @@
 global {
-  ducttape_output="VAD_k-fold"
+  ducttape_output="VAD_distill_model"
   ducttape_experimental_packages=true
   ducttape_experimental_submitters="true"
   ducttape_experimental_imports="true"

@@ -15,4 +15,5 @@ global {
   early_stop=(early_stop: True False)
   patience=(patience: 3 5 7)
   delta=(delta: 0 0.1 0.2)
+  k_fold=(k_fold: 0 10)
 }
