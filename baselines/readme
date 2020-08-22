@@ -1,1 +1,3 @@
-All these scripts run on tesla. I will upload a env setup file later.
+All these scripts run on tesla. All path are pointing to tesla directories. 
+The minimum env requirement is not available yet, but a working env is provided as env.yml.
+To install, use: conda env create -f env.yml (may need to modify the prefix in env.yml)
