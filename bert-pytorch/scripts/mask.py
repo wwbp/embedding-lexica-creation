@@ -223,6 +223,9 @@ def get_word_rating(bert_model, input_ids, attention_masks, tokenizer, gold, wor
             with torch.no_grad():
                 logits, _ = bert_model(b_input_ids, b_attention_masks)
                 
+            if "-" in args.task and args.task.split('-')[0] == 'classification':
+                logits = logits[:,1]
+            
             logits = logits.detach().to('cpu').numpy()
             
             prediction_true.append(logits)
@@ -253,6 +256,9 @@ def get_word_rating(bert_model, input_ids, attention_masks, tokenizer, gold, wor
                 with torch.no_grad():
                     logits, _ = bert_model(b_input_ids, b_attention_masks)
                 
+                if "-" in args.task and args.task.split('-')[0] == 'classification':
+                    logits = logits[:,1]
+                    
                 logits = logits.detach().to('cpu').numpy()
                 prediction.append(logits)
             
@@ -340,19 +346,22 @@ def get_word_rating(bert_model, input_ids, attention_masks, tokenizer, gold, wor
     lexicon_df = pd.DataFrame.from_dict(lexicon).sort_values(by='Value')
     
     if gold is not None:
-        gold = pd.read_csv(gold, sep='\t', header=None)
+        gold = pd.read_csv(gold)
+        gold.dropna()
         gold.columns = ['Word', 'Score', 'Std']
         gold = gold[['Word', 'Score']]
         #gold = gold[['Word', args.task+'.Mean.Sum']]
         
         merge_df = pd.merge(lexicon_df, gold, how='inner', on=['Word'])
         
-        logging.info('Writing to %s' % args.output)
-    
-        merge_df.to_csv(args.output)
-        
         pearson, _ = stats.pearsonr(merge_df['Value'], merge_df['Score'])
         logging.info("Pearson for word is %f" % pearson)
+
+    logging.info('Writing to %s' % args.output)
+    if gold is not None:
+        merge_df.to_csv(args.output)
+    else:
+        lexicon_df.to_csv(args.output)
     
     logging.info('Done!')
         
@@ -368,13 +377,17 @@ if __name__=="__main__":
         logging.info('No GPU available, using the CPU instead.')
         device = torch.device("cpu")
         
-    corpus = pd.read_csv(args.data, sep='\t')
+    corpus = pd.read_csv(args.data, sep=',' if args.data[-3] == 'c' else ',')
+    corpus.dropna()
     
-    data = corpus.text.values
-    values = corpus[args.task].values
+    data = corpus.message.values
+    try:
+        values = corpus.sentiment.values
+    except:
+        values = corpus.emotion.values
     
     logging.info(args.if_bert_embedding)
-    logging.debug(os.path.exists(args.gold_word))
+    #logging.debug(os.path.exists(args.gold_word))
 
     # Load the BERT tokenizer.
     logging.info('Loading BERT tokenizer...')
@@ -391,7 +404,7 @@ if __name__=="__main__":
             logging.warning("Tokenizer loading failed")
         bert_model = DistilBertForSequenceClassification.from_pretrained(args.bert_model).to(device)
     
-    input_ids, attention_masks, values = get_dataset(data, values, tokenizer, args.max_seq_length)
+    input_ids, attention_masks, values = get_dataset(data, values, tokenizer, args.max_seq_length, args.task)
     
     if args.FFN_model:
         word_embeddings = get_word_embeddings(bert_model, input_ids, attention_masks, 

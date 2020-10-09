@@ -7,7 +7,7 @@ export model="ztwu/empathy_dictionary/nrc_anger/trainOnBert/early_stop.True+k_fo
 
 CUDA_VISIBLE_DEVICES=`free-gpu` PYTHONPATH=$rg python $rg/scripts/run_shap_cnn.py \
     --data=$data/NRCData/msgs_tec.csv \
-    --task=classification_anger \
+    --task=classification-anger \
     --model=FFN \
     --model_kind=bert \
     --if_bert_embedding=True \

@@ -134,7 +134,7 @@ def cnn_train(dataset):
 
             total_train_loss += loss.item()*b_word_embeddings.size()[0]
             
-            if '-' in task and task.split('-')[0]=='classification':
+            if '-' in args.task and args.task.split('-')[0]=='classification':
                     logits = torch.argmax(logits, dim=1)
             
             logits = logits.detach().to('cpu').numpy()
@@ -155,7 +155,7 @@ def cnn_train(dataset):
         avg_train_loss = total_train_loss / len(train_dataset)
         
         # Calculate the Pearson Correlation
-        if '-' in task and task.split('-')[0]=='classification':
+        if '-' in args.task and args.task.split('-')[0]=='classification':
             metric = (np.concatenate(prediction_train).flatten() == np.concatenate(true_values_train)).sum()/train_size
         else:
             metric, _ = stats.pearsonr(np.concatenate(prediction_train).flatten(), np.concatenate(true_values_train))             
@@ -186,7 +186,7 @@ def cnn_train(dataset):
                 
             total_eval_loss += loss.item()*b_word_embeddings.size(0)
             
-            if '-' in task and task.split('-')[0]=='classification':
+            if '-' in args.task and args.task.split('-')[0]=='classification':
                     logits = torch.argmax(logits, dim=1)
             
             logits = logits.detach().to('cpu').numpy()
@@ -197,13 +197,13 @@ def cnn_train(dataset):
             
         avg_val_loss = total_eval_loss /len(val_dataset)
         
-        if '-' in task and task.split('-')[0]=='classification':
+        if '-' in args.task and args.task.split('-')[0]=='classification':
             metric = (np.concatenate(prediction_val).flatten() == np.concatenate(true_values_val)).sum()/val_size
         else:
             metric, _ = stats.pearsonr(np.concatenate(prediction_val).flatten(), np.concatenate(true_values_val))             
         logging.debug(true_values_val)
         logging.info("  Average validation loss: {0:.2f}".format(avg_val_loss))
-        if '-' in task and task.split('-')[0]=='classification':
+        if '-' in args.task and args.task.split('-')[0]=='classification':
             logging.info("  Accuracy: {0:.2f}".format(metric))
         else:
             logging.info("  Pearson Correlation: {0:.2f}".format(metric))        
@@ -292,7 +292,7 @@ def get_word_rating(model, input_ids, word_embeddings, attention_masks, tokenize
     if gold is not None:
         gold = pd.read_csv(gold)
         gold.dropna()
-        gold = gold[gold['category'] == 'anger'][['term', 'weight']]
+        gold = gold[gold['category'] == args.task.split('-')[1]][['term', 'weight']]
         gold.columns = ['Word', 'weight']
         
         merge_df = pd.merge(lexicon_df, gold, how='inner', on=['Word'])
