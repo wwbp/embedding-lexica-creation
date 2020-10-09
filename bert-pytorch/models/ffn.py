@@ -8,15 +8,17 @@ logger = logging.getLogger(__name__)
 
 
 class FFN(nn.Module):
-    def __init__(self, embedding_size, dropout):
+    def __init__(self, embedding_size, dropout, task):
         super(FFN, self).__init__()
         
         self.fc1 = nn.Linear(embedding_size, 768)
-        self.fc2 = nn.Linear(768,1)
+        self.fc2 = nn.Linear(768,2) \
+            if '-' in task and task.split('-')[0]=='classification' else nn.Linear(768,1)
         #self.fc3 = nn.Linear(128,1)
         self.dropout = nn.Dropout(dropout)
         
-        self.criterion = nn.MSELoss()
+        self.criterion = nn.CrossEntropyLoss()\
+             if '-' in task and task.split('-')[0]=='classification' else nn.MSELoss()
 
         self.apply(self._init_weights)
         
@@ -46,7 +48,7 @@ class FFN(nn.Module):
         outputs = self.fc2(z1_drop)
         
         if values is not None:
-            loss = self.criterion(outputs, values.view(-1,1))
+            loss = self.criterion(outputs.view(x.size(0),-1), values.view(-1))
             
             outputs = (loss, outputs)
             #logger.info(outputs)

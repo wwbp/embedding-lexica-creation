@@ -29,7 +29,7 @@ def get_word_embeddings(model, input_ids, attention_masks, batch_size, train_mod
             else:
                 word_embedding = model(b_input_ids, b_input_masks)[1][-1][:,1:].detach()
                 if train_model == 'FFN':
-                    word_embedding = word_embedding.view(word_embedding.size(0),-1)
+                    word_embedding = word_embedding.view(word_embedding.size(0),-1).to('cpu')
                 logger.debug(word_embedding.size())
             word_embeddings.append(word_embedding)
             

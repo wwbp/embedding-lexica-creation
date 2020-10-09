@@ -1,13 +1,14 @@
 import argparse
 import logging
 import copy
+from logging import log
 import os
+from os import sep
+from tqdm import tqdm
 
 import numpy as np
 import pandas as pd
-from pandas import merge
 from scipy import stats
-from shap import DeepExplainer
 
 import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler, TensorDataset, random_split
@@ -16,9 +17,6 @@ from transformers import AdamW, get_linear_schedule_with_warmup
 
 from utils.utils import get_dataset
 from utils.bert_utils import get_word_embeddings
-import utils.feature_extraction as fe
-from utils.embedding import Embedding
-from models.cnn import CNN
 from models.ffn import FFN
 from models.modeling_bert import BertForSequenceClassification
 from models.modeling_distilbert import DistilBertForSequenceClassification
@@ -33,10 +31,9 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("--data", required=True, type=str, help="The input data. Should be .csv file.")
 parser.add_argument("--task", required=True, type=str, help="The task for empathy or distress.")
-parser.add_argument("--model", required=True, type=str, help="Use CNN or FFN.")
+parser.add_argument("--FFN_model", action='store_true', help="Whether use FFN or not.")
 parser.add_argument("--model_kind", required=True, type=str)
 parser.add_argument("--if_bert_embedding", type=bool, default=False, help="If use bert embedding.")
-parser.add_argument("--embedding_path", type=str, help="Fasttext embedding file.")
 parser.add_argument("--train_batch_size", type=int, default=32, help="Total batch size for training.")
 parser.add_argument("--bert_model", type=str, help="The pretrained Bert model we choose.")
 parser.add_argument("--max_seq_length", type=int, default=128,
@@ -73,13 +70,7 @@ def cnn_train(dataset):
         batch_size = args.train_batch_size)
     
     try:
-        if args.model == 'CNN':
-            if args.if_bert_embedding:
-                model = CNN(args.max_seq_length-1, dataset[0][0].size()[-1], args.dropout)
-            else:
-                model = CNN(args.max_seq_length, dataset[0][0].size()[-1], args.dropout)
-        else:
-            model = FFN(dataset[0][0].size(-1), args.dropout, args.task)
+        model = FFN(dataset[0][0].size(-1), args.dropout)
     except:
         logging.warning("Model loading failed")
     
@@ -95,13 +86,11 @@ def cnn_train(dataset):
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=args.num_warmup_steps,
                                                 num_training_steps=total_steps)
     
-    best_metric = 0
+    best_pearson = 0
     count_num = 0
     
     for epoch_i in range(args.num_train_epochs):
 
-        logging.info("Epoch number:{}".format(epoch_i))
-        
         #Training Progress
         logging.info('Training...')
 
@@ -134,9 +123,6 @@ def cnn_train(dataset):
 
             total_train_loss += loss.item()*b_word_embeddings.size()[0]
             
-            if '-' in task and task.split('-')[0]=='classification':
-                    logits = torch.argmax(logits, dim=1)
-            
             logits = logits.detach().to('cpu').numpy()
             label_ids = b_labels.to('cpu').numpy()
             
@@ -155,16 +141,10 @@ def cnn_train(dataset):
         avg_train_loss = total_train_loss / len(train_dataset)
         
         # Calculate the Pearson Correlation
-        if '-' in task and task.split('-')[0]=='classification':
-            metric = (np.concatenate(prediction_train).flatten() == np.concatenate(true_values_train)).sum()/train_size
-        else:
-            metric, _ = stats.pearsonr(np.concatenate(prediction_train).flatten(), np.concatenate(true_values_train))             
+        pearson, _ = stats.pearsonr(np.concatenate(prediction_train).flatten(), np.concatenate(true_values_train))             
 
         logging.info("  Average training loss: {0:.2f}".format(avg_train_loss))
-        if args.task == 'classification':
-            logging.info("  Accuracy: {0:.2f}".format(metric))
-        else:
-            logging.info("  Pearson Correlation: {0:.2f}".format(metric))
+        logging.info("  Pearson Correlation: {0:.2f}".format(pearson))
         
         logging.info("Running Validation...")
         
@@ -186,9 +166,6 @@ def cnn_train(dataset):
                 
             total_eval_loss += loss.item()*b_word_embeddings.size(0)
             
-            if '-' in task and task.split('-')[0]=='classification':
-                    logits = torch.argmax(logits, dim=1)
-            
             logits = logits.detach().to('cpu').numpy()
             label_ids = b_labels.to('cpu').numpy()
             
@@ -197,22 +174,17 @@ def cnn_train(dataset):
             
         avg_val_loss = total_eval_loss /len(val_dataset)
         
-        if '-' in task and task.split('-')[0]=='classification':
-            metric = (np.concatenate(prediction_val).flatten() == np.concatenate(true_values_val)).sum()/val_size
-        else:
-            metric, _ = stats.pearsonr(np.concatenate(prediction_val).flatten(), np.concatenate(true_values_val))             
+        pearson, _ = stats.pearsonr(np.concatenate(prediction_val).flatten(), np.concatenate(true_values_val))
+        logging.debug(prediction_val)
         logging.debug(true_values_val)
         logging.info("  Average validation loss: {0:.2f}".format(avg_val_loss))
-        if '-' in task and task.split('-')[0]=='classification':
-            logging.info("  Accuracy: {0:.2f}".format(metric))
-        else:
-            logging.info("  Pearson Correlation: {0:.2f}".format(metric))        
+        logging.info("  Pearson Correlation: {0:.2f}".format(pearson))        
 
-        if metric < best_metric+args.delta:
+        if pearson < best_pearson+args.delta:
             count_num += 1
         else:
             count_num = 0
-            best_metric = metric
+            best_pearson = pearson
             
             #Save the model
             best_model = copy.deepcopy(model)
@@ -225,63 +197,141 @@ def cnn_train(dataset):
     return best_model
 
 
-def get_word_rating(model, input_ids, word_embeddings, attention_masks, tokenizer ,gold):
+def get_word_rating(bert_model, input_ids, attention_masks, tokenizer, gold, word_embeddings=None, model=None):
     
     logging.info('Getting lexicon')
-    input_ids = input_ids[:,1:]
-    attention_masks = attention_masks[:,1:]
-    
-    logging.info('Getting Shapley values')
-    explainer = DeepExplainer(model, word_embeddings[:50])
-    shap_values = explainer.shap_values(word_embeddings)
-    #logging.info(shap_values)
-    shap_values = torch.from_numpy(shap_values[1])
-    logging.debug("---------------------")
-    logging.debug(shap_values.size())
-    logging.info("Calculated done!")
     
     word2values = {}
     exclude = ['[CLS]', '[SEP]', '[PAD]']
     
-    if args.model == 'CNN':
-        shap_values = shap_values.mean(axis=-1)
-        input_ids = torch.masked_select(input_ids, attention_masks.bool())
-        words = tokenizer.convert_ids_to_tokens(input_ids)
-        shap_values = torch.masked_select(shap_values, attention_masks.bool())
-        
-        for index, word in enumerate(words):
-            if word not in exclude:
-                if word not in word2values:
-                    word2values[word] = [shap_values[index]]
-                else:
-                    word2values[word].append(shap_values[index])
+    bert_model.to(device)
     
-    elif args.model == 'FFN':
-        shap_values = shap_values.view(input_ids.size(0), input_ids.size(1), -1).mean(axis=-1)
-        input_ids = torch.masked_select(input_ids, attention_masks.bool())
-        words = tokenizer.convert_ids_to_tokens(input_ids)
-        shap_values = torch.masked_select(shap_values, attention_masks.bool())
+    if word_embeddings is None:
         
-        for index, word in enumerate(words):
-            if word not in exclude:
-                if word not in word2values:
-                    word2values[word] = [shap_values[index]]
-                else:
-                    word2values[word].append(shap_values[index])
-    
-    '''
-    elif args.model == 'FFN':
-        for index, sentence in enumerate(input_ids):
-            sentence = tokenizer.convert_ids_to_tokens(sentence)
-            for word in sentence:
+        dataset_ori = TensorDataset(input_ids, attention_masks)
+        dataloader_ori = DataLoader(
+            dataset_ori, sampler = SequentialSampler(dataset_ori), 
+            batch_size = args.train_batch_size)
+        
+        prediction_true = []
+        logging.info('Getting True Prediction')
+        for batch in tqdm(dataloader_ori):
+            
+            b_input_ids = batch[0].to(device)
+            b_attention_masks = batch[1].to(device)
+            
+            with torch.no_grad():
+                logits, _ = bert_model(b_input_ids, b_attention_masks)
+                
+            logits = logits.detach().to('cpu').numpy()
+            
+            prediction_true.append(logits)
+        prediction_true = np.concatenate(prediction_true).flatten()
+
+        logging.info('Getting word values')
+        for i in tqdm(range(input_ids.size(0))):
+            true = prediction_true[i]
+            input_id = input_ids[i]
+            attention_mask = attention_masks[i]
+
+            word_count = int(attention_mask.sum().item())
+            input_id_matrix = input_id.expand(word_count, -1)
+            attention_mask = attention_mask.repeat(word_count, 1)
+            attention_mask[torch.arange(word_count), torch.arange(word_count)] = 0
+            
+            dataset = TensorDataset(input_id_matrix, attention_mask)
+            dataloader = DataLoader(
+                dataset, sampler = SequentialSampler(dataset), 
+                batch_size = args.train_batch_size)
+            
+            prediction = []
+            for batch in dataloader:
+                
+                b_input_ids = batch[0].to(device)
+                b_attention_masks = batch[1].to(device)
+
+                with torch.no_grad():
+                    logits, _ = bert_model(b_input_ids, b_attention_masks)
+                
+                logits = logits.detach().to('cpu').numpy()
+                prediction.append(logits)
+            
+            prediction = np.concatenate(prediction).flatten()
+            value = true - prediction
+ 
+            words = tokenizer.convert_ids_to_tokens(input_id)
+            
+            for index, word in enumerate(words):
                 if word not in exclude:
                     if word not in word2values:
-                        word2values[word] = [shap_values[index]]
+                        word2values[word] = [value[index]]
                     else:
-                        word2values[word].append(shap_values[index])
-    
-    '''
+                        word2values[word].append(value[index])
+            
+    else:
+        model.to(device)
         
+        dataset_ori = TensorDataset(word_embeddings)
+        dataloader_ori = DataLoader(
+            dataset_ori, sampler = SequentialSampler(dataset_ori), 
+            batch_size = args.train_batch_size)
+        
+        prediction_true = []
+        logging.info('Getting True Prediction')
+        for batch in tqdm(dataloader_ori):
+            
+            b_word_embeddings = batch[0].to(device)
+            
+            with torch.no_grad():
+                logits = model(b_word_embeddings)
+                
+            logits = logits.detach().to('cpu').numpy()
+            
+            prediction_true.append(logits)
+        prediction_true = np.concatenate(prediction_true).flatten()
+        
+        logging.info('Getting word values')
+        for i in tqdm(range(input_ids.size(0))):
+            true = prediction_true[i]
+            input_id = input_ids[i]
+            attention_mask = attention_masks[i]
+            
+            word_count = int(attention_mask.sum().item())
+            input_id_matrix = input_id.expand(word_count, -1)
+            attention_mask = attention_mask.repeat(word_count, 1)
+            attention_mask[torch.arange(word_count), torch.arange(word_count)] = 0
+            
+            word_embedding = get_word_embeddings(bert_model, input_id_matrix, attention_mask, 
+                                                  args.train_batch_size, 'FFN')
+            dataset = TensorDataset(word_embedding)
+            dataloader = DataLoader(
+                dataset, sampler = SequentialSampler(dataset), 
+                batch_size = args.train_batch_size)
+            
+            prediction = []
+            for batch in dataloader:
+                
+                b_word_embeddings = batch[0].to(device)
+                
+                with torch.no_grad():
+                    logits = model(b_word_embeddings)
+                
+                logits = logits.detach().to('cpu').numpy()
+                
+                prediction.append(logits)
+            
+            prediction = np.concatenate(prediction)
+            value = true - prediction
+        
+            words = tokenizer.convert_ids_to_tokens(input_id)
+            
+            for index, word in enumerate(words):
+                if word not in exclude:
+                    if word not in word2values:
+                        word2values[word] = [value[index]]
+                    else:
+                        word2values[word].append(value[index])
+             
     lexicon = {'Word':[], 'Value': []}
     for word in word2values:
         lexicon['Word'].append(word)
@@ -290,19 +340,19 @@ def get_word_rating(model, input_ids, word_embeddings, attention_masks, tokenize
     lexicon_df = pd.DataFrame.from_dict(lexicon).sort_values(by='Value')
     
     if gold is not None:
-        gold = pd.read_csv(gold)
-        gold.dropna()
-        gold = gold[gold['category'] == 'anger'][['term', 'weight']]
-        gold.columns = ['Word', 'weight']
+        gold = pd.read_csv(gold, sep='\t', header=None)
+        gold.columns = ['Word', 'Score', 'Std']
+        gold = gold[['Word', 'Score']]
+        #gold = gold[['Word', args.task+'.Mean.Sum']]
         
         merge_df = pd.merge(lexicon_df, gold, how='inner', on=['Word'])
-        merge_df['weight'] = merge_df['weight'].astype(merge_df['Value'].dtype)
-        pearson, _ = stats.pearsonr(merge_df['Value'], merge_df['weight'])
+        
+        logging.info('Writing to %s' % args.output)
+    
+        merge_df.to_csv(args.output)
+        
+        pearson, _ = stats.pearsonr(merge_df['Value'], merge_df['Score'])
         logging.info("Pearson for word is %f" % pearson)
-    
-    logging.info('Writing to %s' % args.output)
-    
-    merge_df.to_csv(args.output)
     
     logging.info('Done!')
         
@@ -318,49 +368,41 @@ if __name__=="__main__":
         logging.info('No GPU available, using the CPU instead.')
         device = torch.device("cpu")
         
-    corpus = pd.read_csv(args.data, sep=',' if args.data[-3] == 'c' else ',')
-    corpus.dropna()
+    corpus = pd.read_csv(args.data, sep='\t')
     
-    data = corpus.message.values
-    try:
-        values = corpus.sentiment.values
-    except:
-        values = corpus.emotion.values
+    data = corpus.text.values
+    values = corpus[args.task].values
     
     logging.info(args.if_bert_embedding)
     logging.debug(os.path.exists(args.gold_word))
-    if args.if_bert_embedding:
-        # Load the BERT tokenizer.
-        logging.info('Loading BERT tokenizer...')
-        if args.model_kind == 'bert':
-            try:
-                tokenizer = BertTokenizer.from_pretrained(args.tokenizer)
-            except:
-                logging.warning("Tokenizer loading failed")
-            bert_model = BertForSequenceClassification.from_pretrained(args.bert_model).to(device)
-        elif args.model_kind == 'distilbert':
-            try:
-                tokenizer = DistilBertTokenizer.from_pretrained(args.tokenizer)
-            except:
-                logging.warning("Tokenizer loading failed")
-            bert_model = DistilBertForSequenceClassification.from_pretrained(args.bert_model).to(device)
-        input_ids, attention_masks, values = get_dataset(data, values, tokenizer, 
-                                                         args.max_seq_length, args.task)
+
+    # Load the BERT tokenizer.
+    logging.info('Loading BERT tokenizer...')
+    if args.model_kind == 'bert':
+        try:
+            tokenizer = BertTokenizer.from_pretrained(args.tokenizer)
+        except:
+            logging.warning("Tokenizer loading failed")
+        bert_model = BertForSequenceClassification.from_pretrained(args.bert_model).to(device)
+    elif args.model_kind == 'distilbert':
+        try:
+            tokenizer = DistilBertTokenizer.from_pretrained(args.tokenizer)
+        except:
+            logging.warning("Tokenizer loading failed")
+        bert_model = DistilBertForSequenceClassification.from_pretrained(args.bert_model).to(device)
+    
+    input_ids, attention_masks, values = get_dataset(data, values, tokenizer, args.max_seq_length)
+    
+    if args.FFN_model:
         word_embeddings = get_word_embeddings(bert_model, input_ids, attention_masks, 
-                                              args.train_batch_size, args.model)
+                                                args.train_batch_size, 'FFN')
+            
+        logging.debug(word_embeddings.size())
+        logging.debug(os.path.exists(args.gold_word))
+        dataset = TensorDataset(word_embeddings, values)
+        
+        model = cnn_train(dataset)
+        get_word_rating(bert_model, input_ids, attention_masks, tokenizer, args.gold_word, word_embeddings, model)
+        
     else:
-        embs=embs = Embedding.from_fasttext_vec(path=args.embedding_path,zipped=True,file='crawl-300d-2M.vec')
-        values = torch.tensor(values).float()
-        if args.model == 'CNN':
-            word_embeddings = torch.from_numpy(fe.embedding_matrix(data, embs, args.max_seq_length)).float()
-        elif args.model == 'FFN':
-            word_embeddings = torch.from_numpy(fe.embedding_centroid(data, embs)).float()
-    logging.debug(word_embeddings.size())
-    logging.debug(os.path.exists(args.gold_word))
-    dataset = TensorDataset(word_embeddings, values)
-    
-    model = cnn_train(dataset)
-    
-    model.to('cpu')
-    
-    get_word_rating(model, input_ids, word_embeddings, attention_masks, tokenizer, args.gold_word)
+        get_word_rating(bert_model, input_ids, attention_masks, tokenizer, args.gold_word)

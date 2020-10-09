@@ -90,7 +90,7 @@ EOF
     echo "echo \$? > $PWD/exitcode" >> $wrapper  # saves the exit code of the inner process
 
     # Use SGE's -sync option to prevent qsub from immediately returning
-    sleep $(($RANDOM % 60))
+    sleep $(($RANDOM % 300))
     qsub -V -S /bin/bash $wrapper | grep -Eo "Your job [0-9]+" | grep -Eo "[0-9]+" > $PWD/job_id
     job_id=`cat $PWD/job_id`
 

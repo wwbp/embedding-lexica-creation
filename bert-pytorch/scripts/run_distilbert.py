@@ -1,6 +1,7 @@
 import os
 import logging
 import time
+import json
 
 import numpy as np
 import pandas as pd
@@ -17,20 +18,25 @@ from models.modeling_distilbert import DistilBertForSequenceClassification
 
 
 def run_train(device: torch.device, args):
-    train_file = os.path.join(args.data_dir, 'emobank.csv')
-
-    train_df = pd.read_csv(train_file)
-
+    
+    train_df = pd.read_csv(args.data_file, sep=',' if args.data_file[-3] == 'c' else ',')
+    
+    train_df = train_df.dropna()
+    
     logging.info('Number of training sentences: {:,}\n'.format(train_df.shape[0]))
 
-    data = train_df.essay.values
-    values = train_df[args.task].values
+    data = train_df.message.values
+    try:
+        values = train_df.sentiment.values
+    except:
+        values = train_df.emotion.values
 
     # Load the BERT tokenizer.
     logging.info('Loading BERT tokenizer...')
     tokenizer = DistilBertTokenizer.from_pretrained(args.model, do_lower_case=args.do_lower_case)
     
-    input_ids, attention_masks, values = get_dataset(data, values, tokenizer, args.max_seq_length)
+    input_ids, attention_masks, values, = get_dataset(data, values, tokenizer, 
+                                                      args.max_seq_length, args.task)
     dataset = TensorDataset(input_ids, attention_masks, values)
 
     logging.info("We use k-fold as %d".format(args.k_fold))
@@ -39,7 +45,7 @@ def run_train(device: torch.device, args):
         # linear classification layer on top. 
         model = DistilBertForSequenceClassification.from_pretrained(
             args.model,
-            num_labels = 1, # Set 1 to do regression.
+            num_labels = 2 if args.task == 'classification' else 1, # Set 1 to do regression.
             output_attentions = False, # Whether the model returns attentions weights.
             output_hidden_states = True, # Whether the model returns all hidden-states.
             )
@@ -85,7 +91,7 @@ def run_train(device: torch.device, args):
         
         total_t0 = time.time()
         
-        best_pearson = 0
+        best_metric = 0
         count_num = 0
         
         for epoch_i in range(args.num_train_epochs):
@@ -136,6 +142,9 @@ def run_train(device: torch.device, args):
 
                 total_train_loss += loss.item()
                 
+                if args.task == 'classification':
+                    logits = torch.argmax(logits, dim=1)
+                
                 logits = logits.detach().to('cpu').numpy()
                 label_ids = b_labels.to('cpu').numpy()
                 
@@ -158,12 +167,18 @@ def run_train(device: torch.device, args):
             avg_train_loss = total_train_loss / len(train_dataloader)
             
             # Calculate the Pearson Correlation
-            pearson, _ = stats.pearsonr(np.concatenate(prediction_train).flatten(), np.concatenate(true_values_train))             
+            if args.task == 'classification':
+                metric = (np.concatenate(prediction_train).flatten() == np.concatenate(true_values_train)).sum()/train_size
+            else:
+                metric, _ = stats.pearsonr(np.concatenate(prediction_train).flatten(), np.concatenate(true_values_train))             
             # Measure how long this epoch took.
             training_time = format_time(time.time() - t0)
 
             logging.info("  Average training loss: {0:.2f}".format(avg_train_loss))
-            logging.info("  Pearson Correlation: {0:.2f}".format(pearson))
+            if args.task == 'classification':
+                logging.info("  Accuracy: {0:.2f}".format(metric))
+            else:
+                logging.info("  Pearson Correlation: {0:.2f}".format(metric))
             logging.info("  Training epoch took: {:}".format(training_time))
 
             #Validation Progress
@@ -194,6 +209,9 @@ def run_train(device: torch.device, args):
                 
                 # Accumulate the validation loss.
                 total_eval_loss += loss.item()
+                
+                if args.task == 'classification':
+                    logits = torch.argmax(logits, dim=1)
 
                 # Move logits and labels to CPU
                 logits = logits.detach().cpu().numpy()
@@ -205,20 +223,26 @@ def run_train(device: torch.device, args):
             # Calculate the average loss over all of the batches.
             avg_val_loss = total_eval_loss / len(validation_dataloader)
             # Calculate the Pearson Correlation
-            pearson, _ = stats.pearsonr(np.concatenate(prediction_val).flatten(), np.concatenate(true_values_val))             
+            if args.task == 'classification':
+                metric = (np.concatenate(prediction_val).flatten() == np.concatenate(true_values_val)).sum()/val_size
+            else:
+                metric, _ = stats.pearsonr(np.concatenate(prediction_val).flatten(), np.concatenate(true_values_val))             
 
             # Measure how long the validation run took.
             validation_time = format_time(time.time() - t0)
         
             logging.info("  Validation Loss: {0:.2f}".format(avg_val_loss))
-            logging.info("  Pearson Correlation: {0:.2f}".format(pearson))
+            if args.task == 'classification':
+                logging.info("  Accuracy: {0:.2f}".format(metric))
+            else:
+                logging.info("  Pearson Correlation: {0:.2f}".format(metric))
             logging.info("  Validation took: {:}".format(validation_time))
 
-            if pearson < best_pearson+args.delta:
+            if metric < best_metric+args.delta:
                 count_num += 1
             else:
                 count_num = 0
-                best_pearson = pearson
+                best_metric = metric
                 
                 #Save the model
                 output_dir = args.output_dir

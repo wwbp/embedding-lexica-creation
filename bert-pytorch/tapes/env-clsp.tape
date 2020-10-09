@@ -1,5 +1,5 @@
-package rg :: .versioner=disk .path="/export/c01/ztwu/empathy_dictionary/bert-pytorch" .rev=NULL {}
-package data :: .versioner=disk .path="/export/c01/ztwu/empathy_dictionary/data" .rev=NULL {}
+package rg :: .versioner=disk .path="/home/zwu49/ztwu/empathy_dictionary/bert-pytorch" .rev=NULL {}
+package data :: .versioner=disk .path="/home/zwu49/ztwu/empathy_dictionary/data" .rev=NULL {}
 
 global {
   grid="sge"

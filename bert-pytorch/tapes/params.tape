@@ -1,12 +1,12 @@
 global {
   # Model architecture
-  task=(task: empathy distress V A D)
-  do_train=(do_train: True False)
-  do_predict=(do_predict: True False)
+  task=(task: empathy distress V A D stars classification)
+  model_kind=(model_kind: bert distilbert)
+  pretrained=(pretrained: bert-base-uncased distilbert-base-uncased)
 
   # training hyper-parameters
-  max_seq_length=(max_seq_length: 128)
-  train_batch_size=(train_batch_size: 32 64 128)
+  max_seq_length=(max_seq_length: 128 256 512)
+  train_batch_size=(train_batch_size: 8 16 32 64 128)
   eval_batch_size=(eval_batch_size: 8 16 32)
   predict_batch_size=(predict_batch_size: 8 16 32)
   lr=(lr: 3e-5 1e-5 5e-5)

@@ -1,4 +1,5 @@
 import datetime
+import logging
 
 import torch
 from torch.utils.data import Subset
@@ -16,32 +17,26 @@ def format_time(elapsed):
     return str(datetime.timedelta(seconds=elapsed_rounded))
 
 
-def get_dataset(input, values, tokenizer, max_seq_length):
-    # Tokenize all of the sentences and map the tokens to thier word IDs.
-    input_ids = []
-    attention_masks = []
-
-    # For every sentence...
-    for sent in input:
-        encoded_dict = tokenizer.encode_plus(
-                            sent,                      # Sentence to encode.
-                            add_special_tokens = True, # Add '[CLS]' and '[SEP]'
-                            max_length = max_seq_length,           # Pad & truncate all sentences.
-                            pad_to_max_length = True,
-                            return_attention_mask = True,   # Construct attn. masks.
-                            return_tensors = 'pt',     # Return pytorch tensors.
-                            )
-    
-        # Add the encoded sentence to the list.    
-        input_ids.append(encoded_dict['input_ids'])
-    
-        # And its attention mask (simply differentiates padding from non-padding).
-        attention_masks.append(encoded_dict['attention_mask'])
+def get_dataset(input, values, tokenizer, max_seq_length, task):
+    encoded_dict = tokenizer(
+                        input.tolist(),                      # Sentence to encode.
+                        add_special_tokens = True, # Add '[CLS]' and '[SEP]'
+                        max_length = max_seq_length,    # Pad & truncate all sentences.
+                        pad_to_max_length = True, 
+                        return_tensors = 'pt',     # Return pytorch tensors.
+                        )
 
     # Convert the lists into tensors.
-    input_ids = torch.cat(input_ids, dim=0).long()
-    attention_masks = torch.cat(attention_masks, dim=0).float()
-    values = torch.tensor(values).float()
+    input_ids = encoded_dict['input_ids'].long()
+    attention_masks = encoded_dict['attention_mask'].float()
+    
+    logging.info(values)
+    if '-' in task and task.split('-')[0] == 'classification':
+        for i in range(len(values)):
+            values[i] = (values[i] == task.split('-')[1])
+        values = torch.tensor(values.astype(int)).long()
+    else:
+        values = torch.tensor(values).float()
     
     return input_ids, attention_masks, values
 

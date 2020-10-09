@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--data_dir", required=True, type=str, 
+parser.add_argument("--data_file", required=True, type=str, 
                     help="The input data dir. Should contain the .csv files"
                     "for the task.")
 parser.add_argument("--task", required=True, type=str, 
