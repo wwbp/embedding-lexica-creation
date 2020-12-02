@@ -38,7 +38,7 @@ class FFN(nn.Module):
     def forward(self, word_embeddings, values=None):
         #word_embeddings=word_embeddings.permute(0,2,1)
         x = word_embeddings
-        #logger.debug(x.size())
+        #logger.info(x.size())
         
         z1 = torch.tanh(self.fc1(x))
         z1_drop = self.dropout(z1)

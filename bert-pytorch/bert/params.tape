@@ -1,6 +1,6 @@
 global {
   # Model architecture
-  task=(task: empathy distress V A D stars classification)
+  task=(task: regression classification)
   model_kind=(model_kind: bert distilbert)
   pretrained=(pretrained: bert-base-uncased distilbert-base-uncased)
 
@@ -12,8 +12,9 @@ global {
   lr=(lr: 3e-5 1e-5 5e-5)
   num_train_epochs=(num_train_epochs: 10 50 100)
   num_warmup_steps=(num_warmup_steps: 0 100 500 1000 2000 10000 5000)
-  early_stop=(early_stop: True False)
   patience=(patience: 3 5 7)
   delta=(delta: 0 0.1 0.2)
-  k_fold=(k_fold: 0 10)
+
+  # dataset
+  dataset=(dataset: empathy distress emobank_V emobank_A emobank_D yelp_subset nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise)
 }

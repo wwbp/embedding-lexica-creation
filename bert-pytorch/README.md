@@ -1,16 +1,14 @@
 ## Bert training for document-level prediction
 
-### Training
+### Training Bert Model
 
 ```bash
-bash rate.sh
+bash train_bert.sh
 ```
 
 ### Prediction
 
-```bash
-bash predition.sh
-```
+unfinished
 
 ## Getting lexicon from FFN or CNN
 

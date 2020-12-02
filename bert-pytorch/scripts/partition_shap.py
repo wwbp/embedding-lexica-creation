@@ -1,14 +1,13 @@
 import argparse
 import logging
 import os
-from tqdm import tqdm
 
-import numpy as np
 import pandas as pd
+import numpy as np
 from scipy import stats
+import shap
 
 import torch
-from torch.utils.data import DataLoader, SequentialSampler, TensorDataset
 from transformers import BertTokenizerFast, DistilBertTokenizerFast
 
 from utils.preprocess import getData
@@ -35,96 +34,36 @@ parser.add_argument("--tokenizer", type=str, help="Dir to tokenizer for predicti
 
 parser.add_argument("--max_seq_length", type=int, default=128,
                     help="The maximum total input sequence length after WordPiece tokenization. ")
-parser.add_argument("--batch_size", type=int, default=32, help="Total batch size for training.")
 
 parser.add_argument("--gold_word", type=str, default=None, help="Gold word rating for evaluation.")
 
 args = parser.parse_args()
 
+    
+def get_word_rating(data, f, tokenizer, gold=None):    
+    logger.info('Getting word values')
+    explainer = shap.Explainer(f, tokenizer)
+    shap_values = explainer(data)
 
-def get_word_rating(model, input_ids, attention_masks, tokenizer, gold):
-    
-    logger.info('Getting lexicon')
-    
     word2values = {}
     exclude = ['[CLS]', '[SEP]', '[PAD]']
-    
-    model.to(device)
-        
-    dataset_ori = TensorDataset(input_ids, attention_masks)
-    dataloader_ori = DataLoader(
-        dataset_ori, sampler = SequentialSampler(dataset_ori), 
-        batch_size = args.batch_size)
-    
-    prediction_true = []
-    logger.info('Getting True Prediction')
-    for batch in tqdm(dataloader_ori):
-        
-        b_input_ids = batch[0].to(device)
-        b_attention_masks = batch[1].to(device)
-        
-        with torch.no_grad():
-            logits, _ = model(b_input_ids, b_attention_masks)
-            
-        if args.task == 'classification':
-            logits = logits[:,1]
-        
-        logits = logits.detach().to('cpu').numpy()
-        
-        prediction_true.append(logits)
-    prediction_true = np.concatenate(prediction_true).flatten()
 
-    logger.info('Getting word values')
-    for i in tqdm(range(input_ids.size(0))):
-        true = prediction_true[i]
-        input_id = input_ids[i]
-        attention_mask = attention_masks[i]
-
-        word_count = int(attention_mask.sum().item())
-        input_id_matrix = input_id.expand(word_count, -1)
-        attention_mask = attention_mask.repeat(word_count, 1)
-        attention_mask[torch.arange(word_count), torch.arange(word_count)] = 0
-        
-        dataset = TensorDataset(input_id_matrix, attention_mask)
-        dataloader = DataLoader(
-            dataset, sampler = SequentialSampler(dataset), 
-            batch_size = args.batch_size)
-        
-        prediction = []
-        for batch in dataloader:
-            
-            b_input_ids = batch[0].to(device)
-            b_attention_masks = batch[1].to(device)
-
-            with torch.no_grad():
-                logits, _ = model(b_input_ids, b_attention_masks)
-            
-            if args.task == 'classification':
-                logits = logits[:,1]
-                
-            logits = logits.detach().to('cpu').numpy()
-            prediction.append(logits)
-        
-        prediction = np.concatenate(prediction).flatten()
-        value = true - prediction
-
-        words = tokenizer.convert_ids_to_tokens(input_id)
-        
-        for index, word in enumerate(words):
+    for index_sent, sent in enumerate(shap_values.data):
+        for index_word, word in enumerate(sent):
             if word not in exclude:
                 if word not in word2values:
-                    word2values[word] = [value[index]]
+                    word2values[word] = [shap_values.values[index_sent][index_word]]
                 else:
-                    word2values[word].append(value[index])
-             
+                    word2values[word].append([shap_values.values[index_sent][index_word]])
+
     lexicon = {'Word':[], 'Value': [], 'Freq': []}
     for word in word2values:
         lexicon['Word'].append(word)
         lexicon['Value'].append(np.mean(word2values[word]))
         lexicon['Freq'].append(len(word2values[word]))
-    
+
     lexicon_df = pd.DataFrame.from_dict(lexicon).sort_values(by='Value')
-    
+
     if gold is not None:
         gold = pd.read_csv(gold)
         gold.dropna()
@@ -137,12 +76,12 @@ def get_word_rating(model, input_ids, attention_masks, tokenizer, gold):
         pearson, _ = stats.pearsonr(merge_df['Value'], merge_df['Score'])
         logger.info("Pearson for word is %f" % pearson)
 
-    output_file = os.path.join(args.output_dir, args.dataset+'_'+args.model_kind+'_'+args.task+'_mask.csv')
+    output_file = os.path.join(args.output_dir, args.dataset+'_'+args.model_kind+'_'+args.task+'_ps.csv')
     logger.info('Writing to %s' % output_file)
     lexicon_df.to_csv(output_file)
     
     logger.info('Done!')
-        
+
 
 if __name__=="__main__":
     
@@ -172,6 +111,11 @@ if __name__=="__main__":
             logger.warning("Tokenizer loading failed")
         model = DistilBertForSequenceClassification.from_pretrained(args.model).to(device)
     
-    input_ids, attention_masks = get_dataset(df.text.values, tokenizer, args.max_seq_length, args.task)
+    def f(x):
+        input_ids, attention_masks = get_dataset(x, tokenizer, args.max_seq_length, args.task)
+        input_ids = input_ids.cuda()
+        attention_masks = attention_masks.cuda()
+        outputs = model(input_ids,attention_masks)[0][:, -1].detach().cpu().numpy()
+        return outputs
     
-    get_word_rating(model, input_ids, attention_masks, tokenizer, args.gold_word)
+    get_word_rating(df.text.values, f, tokenizer, args.gold_word)

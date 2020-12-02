@@ -11,6 +11,6 @@ global {
   cpuResourceFlags="-l 'hostname=b*,mem_free=30g,ram_free=30g'"
 
   gpuActionFlags="-q g.q"
-  gpuResourceFlags="-l 'hostname=b1[12345678]*|c*,gpu=1,mem_free=15g,ram_free=15g'"
+  gpuResourceFlags="-l 'hostname=b1[12356789]*|c*,gpu=1,mem_free=30g,ram_free=30g'"
 #  gpuResourceFlags="-l 'hostname=c*,gpu=1,mem_free=20g,ram_free=20g'"
 }
