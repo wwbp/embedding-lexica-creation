@@ -97,8 +97,11 @@ def getData(dataFolder: str, dataset: str, task: str) -> pd.DataFrame:
         
         df = pd.read_csv(os.path.join(dataFolder, 'AmazonFineFood/Reviews.csv'))
         df = df.dropna()
-        df = df[df.Score!=3]
-        df['label'] = df.Score.apply(lambda x : 0 if x<3 else 1)
+        if task == 'classification':
+            df = df[df.Score!=3]
+            df['label'] = df.Score.apply(lambda x : 0 if x<3 else 1)
+        elif task == 'regression':
+            df['label'] = df.Score
         df['text'] = df.Text
         df = df.filter(['text','label'], axis = 1)
         
@@ -106,8 +109,11 @@ def getData(dataFolder: str, dataset: str, task: str) -> pd.DataFrame:
         
         df = pd.read_csv(os.path.join(dataFolder, 'AmazonFineFood/Reviews.csv'))
         df = df.dropna()
-        df = df[df.Score!=3]
-        df['label'] = df.Score.apply(lambda x : 0 if x<3 else 1)
+        if task == 'classification':
+            df = df[df.Score!=3]
+            df['label'] = df.Score.apply(lambda x : 0 if x<3 else 1)
+        elif task == 'regression':
+            df['label'] = df.Score
         df['text'] = df.Text
         df = df.filter(['text','label'], axis = 1)  
         df = df.iloc[0:10000]  
@@ -116,8 +122,11 @@ def getData(dataFolder: str, dataset: str, task: str) -> pd.DataFrame:
         
         df = pd.read_json(os.path.join(dataFolder, 'AmazonProductData/reviews_Toys_and_Games_5.json'), lines = True)
         df = df.dropna()
-        df = df[df.Score!=3]
-        df['label'] = df.overall.apply(lambda x : 0 if x<3 else 1)
+        if task == 'classification':
+            df = df[df.overall!=3]
+            df['label'] = df.overall.apply(lambda x : 0 if x<3 else 1)
+        elif task == 'regression':
+            df['label'] = df.overall
         df['text'] = df.reviewText
         df = df.filter(['text','label'], axis = 1)  
 
@@ -126,8 +135,11 @@ def getData(dataFolder: str, dataset: str, task: str) -> pd.DataFrame:
         
         df = pd.read_json(os.path.join(dataFolder, 'AmazonProductData/reviews_Toys_and_Games_5.json'), lines = True)
         df = df.dropna()
-        df = df[df.Score!=3]
-        df['label'] = df.overall.apply(lambda x : 0 if x<3 else 1)
+        if task == 'classification':
+            df = df[df.overall!=3]
+            df['label'] = df.overall.apply(lambda x : 0 if x<3 else 1)
+        elif task == 'regression':
+            df['label'] = df.overall
         df['text'] = df.reviewText
         df = df.filter(['text','label'], axis = 1)  
         df = df.iloc[0:10000]

@@ -54,7 +54,7 @@ def get_word_rating(data, f, tokenizer, gold=None):
                 if word not in word2values:
                     word2values[word] = [shap_values.values[index_sent][index_word]]
                 else:
-                    word2values[word].append([shap_values.values[index_sent][index_word]])
+                    word2values[word].append(shap_values.values[index_sent][index_word])
 
     lexicon = {'Word':[], 'Value': [], 'Freq': []}
     for word in word2values:
