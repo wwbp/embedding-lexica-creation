@@ -1,320 +1,536 @@
-import pandas as pd
-import numpy as np
-import os
-from sklearn.model_selection import train_test_split
-from imblearn.over_sampling import RandomOverSampler
-
-def getData(dataFolder, dataset):
-    """
-    Available options for dataset
-        -----------------------
-        empathy
-        -----------------------
-        yelp
-        yelp_subset
-        -----------------------
-        amazon_finefood
-        amazon_finefood_subset
-        amazon_toys
-        amazon_toys_subset
-        -----------------------
-        nrc_joy
-        nrc_sadness
-        nrc_fear
-        nrc_anger
-        nrc_surprise
-        -----------------------
-        song_joy
-        song_sadness
-        song_fear
-        song_anger
-        song_surprise
-        song_disgust
-        -----------------------
-        dialog_joy
-        dialog_sadness
-        dialog_fear
-        dialog_anger
-        dialog_surprise
-        dialog_disgust
-        -----------------------
-        friends_joy
-        friends_sadness
-        friends_fear
-        friends_anger
-        friends_surprise
-        friends_disgust
-        -----------------------
-        emobank
-    """
-#-----------------------------------------------------------------------------------------------
-    
-    if dataset == 'empathy':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'Empathy/messages.csv'))
-        df = df.dropna()
-        df['label'] = df.empathy_bin
-        df['text'] = df.essay
-        df = df.filter(['text','label'], axis = 1)
-        
-#-----------------------------------------------------------------------------------------------
-    
-    elif dataset == 'yelp':
-
-        df = pd.read_csv(os.path.join(dataFolder,'Yelp/df1M.tsv'), sep='\t')
-        df = df.dropna()
-        df = df[df.stars!=3]
-        df['label'] = df.stars.apply(lambda x : 0 if x<3 else 1)
-        df = df.filter(['text','label'], axis = 1)
-        
-    elif dataset == 'yelp_subset':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'Yelp/df1M.tsv'), sep='\t')
-        df = df.dropna()
-        df = df[df.stars!=3]
-        df['label'] = df.stars.apply(lambda x : 0 if x<3 else 1)
-        df = df.filter(['text','label'], axis = 1)
-        df = df.iloc[0:10000]
-    
-#-----------------------------------------------------------------------------------------------
-    
-    elif dataset == 'amazon_finefood':
-        
-        df = pd.read_csv(os.path.join(dataFolder, 'AmazonFineFood/Reviews.csv'))
-        df = df.dropna()
-        df = df[df.Score!=3]
-        df['label'] = df.Score.apply(lambda x : 0 if x<3 else 1)
-        df['text'] = df.Text
-        df = df.filter(['text','label'], axis = 1)
-        
-    elif dataset == 'amazon_finefood_subset':
-        
-        df = pd.read_csv(os.path.join(dataFolder, 'AmazonFineFood/Reviews.csv'))
-        df = df.dropna()
-        df = df[df.Score!=3]
-        df['label'] = df.Score.apply(lambda x : 0 if x<3 else 1)
-        df['text'] = df.Text
-        df = df.filter(['text','label'], axis = 1)  
-        df = df.iloc[0:10000]  
-
-    elif dataset == 'amazon_toys':
-        
-        df = pd.read_json(os.path.join(dataFolder, 'AmazonProductData/reviews_Toys_and_Games_5.json'), lines = True)
-        df = df.dropna()
-        df = df[df.overall!=3]
-        df['label'] = df.overall.apply(lambda x : 0 if x<3 else 1)
-        df['text'] = df.reviewText
-        df = df.filter(['text','label'], axis = 1)  
-
-        
-    elif dataset == 'amazon_toys_subset':
-        
-        df = pd.read_json(os.path.join(dataFolder, 'AmazonProductData/reviews_Toys_and_Games_5.json'), lines = True)
-        df = df.dropna()
-        df = df[df.overall!=3]
-        df['label'] = df.overall.apply(lambda x : 0 if x<3 else 1)
-        df['text'] = df.reviewText
-        df = df.filter(['text','label'], axis = 1)  
-        df = df.iloc[0:10000]
-        
-#-----------------------------------------------------------------------------------------------
-        
-    elif dataset == 'nrc_joy':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'NRCData/msgs_tec_langClean.csv'))
-        df = df.dropna()
-        df['label'] = df.emotion.apply(lambda x : 1 if x == 'joy' else 0)
-        df['text'] = df.message
-        df = df.filter(['text','label'], axis = 1)
-        
-    elif dataset == 'nrc_sadness':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'NRCData/msgs_tec_langClean.csv'))
-        df = df.dropna()
-        df['label'] = df.emotion.apply(lambda x : 1 if x == 'sadness' else 0)
-        df['text'] = df.message
-        df = df.filter(['text','label'], axis = 1)
-        
-    elif dataset == 'nrc_fear':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'NRCData/msgs_tec_langClean.csv'))
-        df = df.dropna()
-        df['label'] = df.emotion.apply(lambda x : 1 if x == 'fear' else 0)
-        df['text'] = df.message
-        df = df.filter(['text','label'], axis = 1)
-        
-    elif dataset == 'nrc_anger':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'NRCData/msgs_tec_langClean.csv'))
-        df = df.dropna()
-        df['label'] = df.emotion.apply(lambda x : 1 if x == 'anger' else 0)
-        df['text'] = df.message
-        df = df.filter(['text','label'], axis = 1)
-        
-    elif dataset == 'nrc_surprise':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'NRCData/msgs_tec_langClean.csv'))
-        df = df.dropna()
-        df['label'] = df.emotion.apply(lambda x : 1 if x == 'surprise' else 0)
-        df['text'] = df.message
-        df = df.filter(['text','label'], axis = 1)
-        
-#-----------------------------------------------------------------------------------------------
-
-    elif dataset == 'song_joy':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'SongLyrics/RadaEmotionWheelVersesCleaned.csv'))
-        df = df.dropna()
-        df['label'] = df.joy.apply(lambda x : 1 if x == 1.0 else 0)
-        df = df.filter(['text','label'], axis = 1)
-        
-    elif dataset == 'song_sadness':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'SongLyrics/RadaEmotionWheelVersesCleaned.csv'))
-        df = df.dropna()
-        df['label'] = df.sadness.apply(lambda x : 1 if x == 1.0 else 0)
-        df = df.filter(['text','label'], axis = 1)
-        
-    elif dataset == 'song_fear':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'SongLyrics/RadaEmotionWheelVersesCleaned.csv'))
-        df = df.dropna()
-        df['label'] = df.fear.apply(lambda x : 1 if x == 1.0 else 0)
-        df = df.filter(['text','label'], axis = 1)
-        
-    elif dataset == 'song_anger':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'SongLyrics/RadaEmotionWheelVersesCleaned.csv'))
-        df = df.dropna()
-        df['label'] = df.anger.apply(lambda x : 1 if x == 1.0 else 0)
-        df = df.filter(['text','label'], axis = 1)
-        
-    elif dataset == 'song_surprise':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'SongLyrics/RadaEmotionWheelVersesCleaned.csv'))
-        df = df.dropna()
-        df['label'] = df.surprise.apply(lambda x : 1 if x == 1.0 else 0)
-        df = df.filter(['text','label'], axis = 1)
-        
-    elif dataset == 'song_disgust':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'SongLyrics/RadaEmotionWheelVersesCleaned.csv'))
-        df = df.dropna()
-        df['label'] = df.disgust.apply(lambda x : 1 if x == 1.0 else 0)
-        df = df.filter(['text','label'], axis = 1)
-        
-#-----------------------------------------------------------------------------------------------
-        
-    elif dataset == 'dialog_joy':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'DailyDialog/dialogData.csv'), sep='\t')
-        df = df.dropna()
-        df['label'] = df.label.apply(lambda x : 1 if x == 'joy' else 0)
-        df = df.filter(['text','label'], axis = 1)
-        
-    elif dataset == 'dialog_sadness':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'DailyDialog/dialogData.csv'), sep='\t')
-        df = df.dropna()
-        df['label'] = df.label.apply(lambda x : 1 if x == 'sadness' else 0)
-        df = df.filter(['text','label'], axis = 1)
-        
-    elif dataset == 'dialog_fear':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'DailyDialog/dialogData.csv'), sep='\t')
-        df = df.dropna()
-        df['label'] = df.label.apply(lambda x : 1 if x == 'fear' else 0)
-        df = df.filter(['text','label'], axis = 1)
-        
-    elif dataset == 'dialog_anger':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'DailyDialog/dialogData.csv'), sep='\t')
-        df = df.dropna()
-        df['label'] = df.label.apply(lambda x : 1 if x == 'anger' else 0)
-        df = df.filter(['text','label'], axis = 1)
-        
-    elif dataset == 'dialog_surprise':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'DailyDialog/dialogData.csv'), sep='\t')
-        df = df.dropna()
-        df['label'] = df.label.apply(lambda x : 1 if x == 'surprise' else 0)
-        df = df.filter(['text','label'], axis = 1)
-        
-    elif dataset == 'dialog_disgust':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'DailyDialog/dialogData.csv'), sep='\t')
-        df = df.dropna()
-        df['label'] = df.label.apply(lambda x : 1 if x == 'disgust' else 0)
-        df = df.filter(['text','label'], axis = 1)
-        
-#-----------------------------------------------------------------------------------------------
-
-    elif dataset == 'friends_joy':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'EmotionLines/friendsData.csv'), sep='\t')
-        df = df.dropna()
-        df['label'] = df.label.apply(lambda x : 1 if x == 'joy' else 0)
-        df = df.filter(['text','label'], axis = 1)
-        
-    elif dataset == 'friends_sadness':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'EmotionLines/friendsData.csv'), sep='\t')
-        df = df.dropna()
-        df['label'] = df.label.apply(lambda x : 1 if x == 'sadness' else 0)
-        df = df.filter(['text','label'], axis = 1)
-        
-    elif dataset == 'friends_fear':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'EmotionLines/friendsData.csv'), sep='\t')
-        df = df.dropna()
-        df['label'] = df.label.apply(lambda x : 1 if x == 'fear' else 0)
-        df = df.filter(['text','label'], axis = 1)
-        
-    elif dataset == 'friends_anger':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'EmotionLines/friendsData.csv'), sep='\t')
-        df = df.dropna()
-        df['label'] = df.label.apply(lambda x : 1 if x == 'anger' else 0)
-        df = df.filter(['text','label'], axis = 1)
-        
-    elif dataset == 'friends_surprise':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'EmotionLines/friendsData.csv'), sep='\t')
-        df = df.dropna()
-        df['label'] = df.label.apply(lambda x : 1 if x == 'surprise' else 0)
-        df = df.filter(['text','label'], axis = 1)
-        
-    elif dataset == 'friends_disgust':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'EmotionLines/friendsData.csv'), sep='\t')
-        df = df.dropna()
-        df['label'] = df.label.apply(lambda x : 1 if x == 'disgust' else 0)
-        df = df.filter(['text','label'], axis = 1)
-        
-#-----------------------------------------------------------------------------------------------
-        
-    elif dataset == 'emobank':
-        
-        df = pd.read_csv(os.path.join(dataFolder,'Empathy/emobank.csv'))
-        df = df.dropna()
-        df = df[df.V!=3]
-        df['label'] = df.V.apply(lambda x : 0 if x<3 else 1)
-        df['text'] = df.essay
-        df = df.filter(['text','label'], axis = 1)
-
-    return df
-    
-    
-def splitData(df, balanceTrain = True):
-    trainX, tempX, trainy, tempy = train_test_split(df, df.label, test_size = 0.2, random_state = 42)
-    devX, testX, devy, testy = train_test_split(tempX, tempX.label, test_size = 0.5, random_state = 42)
-    if balanceTrain:
-        ros = RandomOverSampler(random_state = 42)
-        trainX_sampled, _ = ros.fit_resample(trainX, trainX.label)
-        trainX = trainX_sampled
-    return trainX, devX, testX   
-
-def balanceData(df):
-    ros = RandomOverSampler(random_state = 42)
-    df, _ = ros.fit_resample(df, df.label)
-    return df
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "import os\n",
+    "from sklearn.model_selection import train_test_split\n",
+    "from imblearn.over_sampling import RandomOverSampler"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "dataFolder = './Raw'"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# filter NRC data\n",
+    "import langdetect\n",
+    "from langdetect import detect\n",
+    "df = pd.read_csv(os.path.join(dataFolder,'NRCData/msgs_tec.csv'))\n",
+    "df = df.dropna()\n",
+    "df['lang'] = df.message.apply(lambda x : detect(x))\n",
+    "df = df[df.lang=='en']\n",
+    "df.to_csv(os.path.join(dataFolder,'NRCData/msgs_tec_langClean.csv'),index = False, index_label = False)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def getData(dataFolder, dataset):\n",
+    "    \"\"\"\n",
+    "    Available options for dataset\n",
+    "        -----------------------\n",
+    "        empathy\n",
+    "        -----------------------\n",
+    "        yelp\n",
+    "        yelp_subset\n",
+    "        -----------------------\n",
+    "        amazon_finefood\n",
+    "        amazon_finefood_subset\n",
+    "        amazon_toys\n",
+    "        amazon_toys_subset\n",
+    "        -----------------------\n",
+    "        nrc_joy\n",
+    "        nrc_sadness\n",
+    "        nrc_fear\n",
+    "        nrc_anger\n",
+    "        nrc_surprise\n",
+    "        -----------------------\n",
+    "        song_joy\n",
+    "        song_sadness\n",
+    "        song_fear\n",
+    "        song_anger\n",
+    "        song_surprise\n",
+    "        song_disgust\n",
+    "        -----------------------\n",
+    "        dialog_joy\n",
+    "        dialog_sadness\n",
+    "        dialog_fear\n",
+    "        dialog_anger\n",
+    "        dialog_surprise\n",
+    "        dialog_disgust\n",
+    "        -----------------------\n",
+    "        friends_joy\n",
+    "        friends_sadness\n",
+    "        friends_fear\n",
+    "        friends_anger\n",
+    "        friends_surprise\n",
+    "        friends_disgust\n",
+    "        ----\n",
+    "        emobank\n",
+    "    \"\"\"\n",
+    "#-----------------------------------------------------------------------------------------------\n",
+    "    \n",
+    "    if dataset == 'empathy':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'Empathy/messages.csv'))\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.empathy_bin\n",
+    "        df['text'] = df.essay\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "#-----------------------------------------------------------------------------------------------\n",
+    "    \n",
+    "    elif dataset == 'yelp':\n",
+    "\n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'Yelp/df1M.tsv'), sep='\\t')\n",
+    "        df = df.dropna()\n",
+    "        df = df[df.stars!=3]\n",
+    "        df['label'] = df.stars.apply(lambda x : 0 if x<3 else 1)\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "    elif dataset == 'yelp_subset':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'Yelp/df1M.tsv'), sep='\\t')\n",
+    "        df = df.dropna()\n",
+    "        df = df[df.stars!=3]\n",
+    "        df['label'] = df.stars.apply(lambda x : 0 if x<3 else 1)\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        df = df.iloc[0:10000]\n",
+    "    \n",
+    "#-----------------------------------------------------------------------------------------------\n",
+    "    \n",
+    "    elif dataset == 'amazon_finefood':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder, 'AmazonFineFood/Reviews.csv'))\n",
+    "        df = df.dropna()\n",
+    "        df = df[df.Score!=3]\n",
+    "        df['label'] = df.Score.apply(lambda x : 0 if x<3 else 1)\n",
+    "        df['text'] = df.Text\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "    elif dataset == 'amazon_finefood_subset':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder, 'AmazonFineFood/Reviews.csv'))\n",
+    "        df = df.dropna()\n",
+    "        df = df[df.Score!=3]\n",
+    "        df['label'] = df.Score.apply(lambda x : 0 if x<3 else 1)\n",
+    "        df['text'] = df.Text\n",
+    "        df = df.filter(['text','label'], axis = 1)  \n",
+    "        df = df.iloc[0:10000]  \n",
+    "\n",
+    "    elif dataset == 'amazon_toys':\n",
+    "        \n",
+    "        df = pd.read_json(os.path.join(dataFolder, 'AmazonProductData/reviews_Toys_and_Games_5.json'), lines = True)\n",
+    "        df = df.dropna()\n",
+    "        df = df[df.overall!=3]\n",
+    "        df['label'] = df.overall.apply(lambda x : 0 if x<3 else 1)\n",
+    "        df['text'] = df.reviewText\n",
+    "        df = df.filter(['text','label'], axis = 1)  \n",
+    "\n",
+    "        \n",
+    "    elif dataset == 'amazon_toys_subset':\n",
+    "        \n",
+    "        df = pd.read_json(os.path.join(dataFolder, 'AmazonProductData/reviews_Toys_and_Games_5.json'), lines = True)\n",
+    "        df = df.dropna()\n",
+    "        df = df[df.overall!=3]\n",
+    "        df['label'] = df.overall.apply(lambda x : 0 if x<3 else 1)\n",
+    "        df['text'] = df.reviewText\n",
+    "        df = df.filter(['text','label'], axis = 1)  \n",
+    "        df = df.iloc[0:10000]\n",
+    "        \n",
+    "#-----------------------------------------------------------------------------------------------\n",
+    "        \n",
+    "    elif dataset == 'nrc_joy':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'NRCData/msgs_tec_langClean.csv'))\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.emotion.apply(lambda x : 1 if x == 'joy' else 0)\n",
+    "        df['text'] = df.message\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "    elif dataset == 'nrc_sadness':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'NRCData/msgs_tec_langClean.csv'))\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.emotion.apply(lambda x : 1 if x == 'sadness' else 0)\n",
+    "        df['text'] = df.message\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "    elif dataset == 'nrc_fear':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'NRCData/msgs_tec_langClean.csv'))\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.emotion.apply(lambda x : 1 if x == 'fear' else 0)\n",
+    "        df['text'] = df.message\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "    elif dataset == 'nrc_anger':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'NRCData/msgs_tec_langClean.csv'))\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.emotion.apply(lambda x : 1 if x == 'anger' else 0)\n",
+    "        df['text'] = df.message\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "    elif dataset == 'nrc_surprise':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'NRCData/msgs_tec_langClean.csv'))\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.emotion.apply(lambda x : 1 if x == 'surprise' else 0)\n",
+    "        df['text'] = df.message\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "#-----------------------------------------------------------------------------------------------\n",
+    "\n",
+    "    elif dataset == 'song_joy':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'SongLyrics/RadaEmotionWheelVersesCleaned.csv'))\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.joy.apply(lambda x : 1 if x == 1.0 else 0)\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "    elif dataset == 'song_sadness':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'SongLyrics/RadaEmotionWheelVersesCleaned.csv'))\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.sadness.apply(lambda x : 1 if x == 1.0 else 0)\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "    elif dataset == 'song_fear':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'SongLyrics/RadaEmotionWheelVersesCleaned.csv'))\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.fear.apply(lambda x : 1 if x == 1.0 else 0)\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "    elif dataset == 'song_anger':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'SongLyrics/RadaEmotionWheelVersesCleaned.csv'))\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.anger.apply(lambda x : 1 if x == 1.0 else 0)\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "    elif dataset == 'song_surprise':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'SongLyrics/RadaEmotionWheelVersesCleaned.csv'))\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.surprise.apply(lambda x : 1 if x == 1.0 else 0)\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "    elif dataset == 'song_disgust':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'SongLyrics/RadaEmotionWheelVersesCleaned.csv'))\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.disgust.apply(lambda x : 1 if x == 1.0 else 0)\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "#-----------------------------------------------------------------------------------------------\n",
+    "        \n",
+    "    elif dataset == 'dialog_joy':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'DailyDialog/dialogData.csv'), sep='\\t')\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.label.apply(lambda x : 1 if x == 'joy' else 0)\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "    elif dataset == 'dialog_sadness':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'DailyDialog/dialogData.csv'), sep='\\t')\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.label.apply(lambda x : 1 if x == 'sadness' else 0)\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "    elif dataset == 'dialog_fear':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'DailyDialog/dialogData.csv'), sep='\\t')\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.label.apply(lambda x : 1 if x == 'fear' else 0)\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "    elif dataset == 'dialog_anger':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'DailyDialog/dialogData.csv'), sep='\\t')\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.label.apply(lambda x : 1 if x == 'anger' else 0)\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "    elif dataset == 'dialog_surprise':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'DailyDialog/dialogData.csv'), sep='\\t')\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.label.apply(lambda x : 1 if x == 'surprise' else 0)\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "    elif dataset == 'dialog_disgust':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'DailyDialog/dialogData.csv'), sep='\\t')\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.label.apply(lambda x : 1 if x == 'disgust' else 0)\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "#-----------------------------------------------------------------------------------------------\n",
+    "\n",
+    "    elif dataset == 'friends_joy':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'EmotionLines/friendsData.csv'), sep='\\t')\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.label.apply(lambda x : 1 if x == 'joy' else 0)\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "    elif dataset == 'friends_sadness':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'EmotionLines/friendsData.csv'), sep='\\t')\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.label.apply(lambda x : 1 if x == 'sadness' else 0)\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "    elif dataset == 'friends_fear':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'EmotionLines/friendsData.csv'), sep='\\t')\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.label.apply(lambda x : 1 if x == 'fear' else 0)\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "    elif dataset == 'friends_anger':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'EmotionLines/friendsData.csv'), sep='\\t')\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.label.apply(lambda x : 1 if x == 'anger' else 0)\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "    elif dataset == 'friends_surprise':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'EmotionLines/friendsData.csv'), sep='\\t')\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.label.apply(lambda x : 1 if x == 'surprise' else 0)\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "    elif dataset == 'friends_disgust':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'EmotionLines/friendsData.csv'), sep='\\t')\n",
+    "        df = df.dropna()\n",
+    "        df['label'] = df.label.apply(lambda x : 1 if x == 'disgust' else 0)\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "        \n",
+    "#-----------------------------------------------------------------------------------------------\n",
+    "        \n",
+    "    elif dataset == 'emobank':\n",
+    "        \n",
+    "        df = pd.read_csv(os.path.join(dataFolder,'Empathy/emobank.csv'))\n",
+    "        df = df.dropna()\n",
+    "        df = df[df.V!=3]\n",
+    "        df['label'] = df.V.apply(lambda x : 0 if x<3 else 1)\n",
+    "        df['text'] = df.essay\n",
+    "        df = df.filter(['text','label'], axis = 1)\n",
+    "\n",
+    "    return df"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "def splitData(df, balanceTrain = True):\n",
+    "    trainX, tempX, trainy, tempy = train_test_split(df, df.label, test_size = 0.2, random_state = 42)\n",
+    "    devX, testX, devy, testy = train_test_split(tempX, tempX.label, test_size = 0.5, random_state = 42)\n",
+    "    if balanceTrain:\n",
+    "        ros = RandomOverSampler(random_state = 42)\n",
+    "        trainX_sampled, _ = ros.fit_resample(trainX, trainX.label)\n",
+    "        trainX = trainX_sampled\n",
+    "        testX_sampled, _ = ros.fit_resample(testX, testX.label)\n",
+    "        testX = testX_sampled\n",
+    "        devX_sampled, _ = ros.fit_resample(devX, devX.label)\n",
+    "        devX = devX_sampled\n",
+    "    return trainX, devX, testX  \n",
+    "\n",
+    "def balanceData(df):\n",
+    "    ros = RandomOverSampler(random_state = 42)\n",
+    "    df, _ = ros.fit_resample(df, df.label)\n",
+    "    return df"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Example"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Help on function getData in module __main__:\n",
+      "\n",
+      "getData(dataFolder, dataset)\n",
+      "    Available options for dataset\n",
+      "        -----------------------\n",
+      "        empathy\n",
+      "        -----------------------\n",
+      "        yelp\n",
+      "        yelp_subset\n",
+      "        -----------------------\n",
+      "        amazon_finefood\n",
+      "        amazon_finefood_subset\n",
+      "        amazon_toys\n",
+      "        amazon_toys_subset\n",
+      "        -----------------------\n",
+      "        nrc_joy\n",
+      "        nrc_sadness\n",
+      "        nrc_fear\n",
+      "        nrc_anger\n",
+      "        nrc_surprise\n",
+      "        -----------------------\n",
+      "        song_joy\n",
+      "        song_sadness\n",
+      "        song_fear\n",
+      "        song_anger\n",
+      "        song_surprise\n",
+      "        song_disgust\n",
+      "        -----------------------\n",
+      "        dialog_joy\n",
+      "        dialog_sadness\n",
+      "        dialog_fear\n",
+      "        dialog_anger\n",
+      "        dialog_surprise\n",
+      "        dialog_disgust\n",
+      "        -----------------------\n",
+      "        friends_joy\n",
+      "        friends_sadness\n",
+      "        friends_fear\n",
+      "        friends_anger\n",
+      "        friends_surprise\n",
+      "        friends_disgust\n",
+      "        ----\n",
+      "        emobank\n",
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "help(getData)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Datasets used for training\n",
+    "train,test,dev = splitData(getData(dataFolder,'amazon_toys'))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Datasets used only for evaluation\n",
+    "df = balanceData(getData(dataFolder,'dialog_fear'))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "1    111618\n",
+      "0    111618\n",
+      "Name: label, dtype: int64\n"
+     ]
+    }
+   ],
+   "source": [
+    "train.head()\n",
+    "print(train.label.value_counts())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "1    14948\n",
+      "0    14948\n",
+      "Name: label, dtype: int64\n"
+     ]
+    }
+   ],
+   "source": [
+    "df.head()\n",
+    "print(df.label.value_counts())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "lstm",
+   "language": "python",
+   "name": "lstm"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.7.7"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}
