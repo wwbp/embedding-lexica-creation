@@ -339,7 +339,13 @@ def splitData(df: pd.DataFrame, balanceTrain: bool=True) -> Tuple[pd.DataFrame]:
     trainX, tempX, _, _ = train_test_split(df, df.label, test_size = 0.2, random_state = 42)
     devX, testX, _, _ = train_test_split(tempX, tempX.label, test_size = 0.5, random_state = 42)
     if balanceTrain:
-        trainX = balanceData(trainX)
+        ros = RandomOverSampler(random_state = 42)
+        trainX_sampled, _ = ros.fit_resample(trainX, trainX.label)
+        trainX = trainX_sampled
+        testX_sampled, _ = ros.fit_resample(testX, testX.label)
+        testX = testX_sampled
+        devX_sampled, _ = ros.fit_resample(devX, devX.label)
+        devX = devX_sampled
     return trainX, devX, testX   
 
 

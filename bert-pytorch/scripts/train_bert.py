@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from transformers import BertTokenizerFast, DistilBertTokenizerFast
 from transformers import AdamW, get_linear_schedule_with_warmup
 
-from utils.preprocess import getData, splitData
+from utils.preprocess import getData, splitData, balanceData
 from utils.utils import format_time, prepare_data
 from models.modeling_bert import BertForSequenceClassification
 from models.modeling_distilbert import DistilBertForSequenceClassification
@@ -29,11 +29,12 @@ def parse():
 
     parser.add_argument("--dataFolder", required=True, type=str, help="The input data dir.")
     parser.add_argument("--dataset", required=True, type=str, help="The dataset we use.")
-    parser.add_argument("--output_dir", required=True, type=str, help="The output directory where the model checkpoints will be written.")
+    parser.add_argument("--output_dir", type=str, help="The output directory where the model checkpoints will be written.")
     parser.add_argument("--task", required=True, type=str, help="Classification or regression.")
     parser.add_argument("--do_train", action="store_true", help="Whether to run training.")
     parser.add_argument("--do_predict", action="store_true", help="Whether to run prediction.")
-
+    parser.add_argument("--test_set", action="store_true", help="Whether pick test set from the whole daata.")
+    
     parser.add_argument("--model_kind", required=True, type=str, help="Bert or distilBert.")
     parser.add_argument("--model", required=True, type=str, help="The pretrained Bert model we choose.")
     parser.add_argument("--do_lower_case", action="store_true",
@@ -63,7 +64,12 @@ def parse():
 def run_train(device: torch.device, args):
 
     df = getData(args.dataFolder, args.dataset, args.task)
-    df_train, df_dev, df_test = splitData(df, balanceTrain=False)
+    if args.task == "classification":
+        df_train, df_dev, df_test = splitData(df, balanceTrain=True)
+    elif args.task == "regression":
+        df_train, df_dev, df_test = splitData(df, balanceTrain=False)
+    else:
+        logger.warning("Task Type Error!")
 
     # Load the BERT tokenizer.
     logger.info('Loading BERT tokenizer...')
@@ -368,14 +374,20 @@ def run_train(device: torch.device, args):
 
 def run_predict(device: torch.device, args):
     '''Unfinished'''
-    df = getData(args.dataFolder, args.dataset)
+    df = getData(args.dataFolder, args.dataset, args.task)
+    if args.test_set:
+        _, _, df = splitData(df, True)
+    else:
+        df = balanceData(df)
 
     # Load the BERT tokenizer.
-    logging.info('Loading BERT tokenizer...')
-    try:
-        tokenizer = BertTokenizerFast.from_pretrained(args.tokenizer)
-    except:
-        logging.warning("Tokenizer loading failed")
+    logger.info('Loading BERT tokenizer...')
+    if args.model_kind == "bert":
+        tokenizer = BertTokenizerFast.from_pretrained(args.model, do_lower_case=args.do_lower_case)
+    elif args.model_kind == "distilbert":
+        tokenizer = DistilBertTokenizerFast.from_pretrained(args.model, do_lower_case=args.do_lower_case)
+    else:
+        logger.error("Model kind not supported!")
     
     dataset = prepare_data(df, tokenizer, args.max_seq_length, args.task)
 
@@ -383,10 +395,22 @@ def run_predict(device: torch.device, args):
         dataset, sampler = SequentialSampler(dataset), 
         batch_size = args.predict_batch_size)
     
-    try:
-        model = BertForSequenceClassification.from_pretrained(args.model)
-    except:
-        logging.warning("Model loading failed")
+    # Load BertForSequenceClassification, the pretrained BERT model with a single 
+    # linear classification layer on top.
+    if args.model_kind == "bert": 
+        model = BertForSequenceClassification.from_pretrained(
+            args.model,
+            num_labels = 2 if args.task == 'classification' else 1, # Set 1 to do regression.
+            output_attentions = False, # Whether the model returns attentions weights.
+            output_hidden_states = True, # Whether the model returns all hidden-states.
+            )
+    elif args.model_kind == "distilbert":
+        model = DistilBertForSequenceClassification.from_pretrained(
+            args.model,
+            num_labels = 2 if args.task == 'classification' else 1, # Set 1 to do regression.
+            output_attentions = False, # Whether the model returns attentions weights.
+            output_hidden_states = True, # Whether the model returns all hidden-states.
+            )
     
     model.to(device)
     
@@ -394,37 +418,41 @@ def run_predict(device: torch.device, args):
     model.eval()
 
     # Tracking variables 
-    predictions , true_labels = [], []
+    TP = TN = FN = FP = 0
 
     # Predict 
     for batch in prediction_dataloader:
-        # Add batch to GPU
-        batch = tuple(t.to(device) for t in batch)
-        
-        # Unpack the inputs from our dataloader
-        b_input_ids, b_input_mask, b_labels = batch
-        
-        # Telling the model not to compute or store gradients, saving memory and 
-        # speeding up prediction
-        with torch.no_grad():
-            # Forward pass, calculate logit predictions
-            outputs = model(b_input_ids, attention_mask=b_input_mask)
+        b_input_ids = batch[0].to(device)
+        b_input_mask = batch[1].to(device)
+        b_labels = batch[2].to(device)
 
-        logits = outputs[0]
+        with torch.no_grad():        
 
+            _, logits, _ = model(b_input_ids, 
+                                 attention_mask=b_input_mask,
+                                 labels=b_labels)
+
+        if args.task == 'classification':
+            logits = torch.argmax(logits, dim=1)
+            
         # Move logits and labels to CPU
-        logits = logits.detach().to('cpu').numpy()
+        logits = logits.detach().cpu().numpy()
         label_ids = b_labels.to('cpu').numpy()
         
         # Store predictions and true labels
-        predictions.append(logits)
-        true_labels.append(label_ids)
+        TP += ((logits == 1) & (label_ids == 1)).sum().item()
+        TN += ((logits == 0) & (label_ids == 0)).sum().item()
+        FN += ((logits == 0) & (label_ids == 1)).sum().item()
+        FP += ((logits == 1) & (label_ids == 0)).sum().item()
     
-    pearson, _ = stats.pearsonr(np.concatenate(predictions).flatten(), np.concatenate(true_labels))
-    print("  Pearson Correlation: {0:.3f}".format(pearson))
+    p = TP / (TP + FP)
+    r = TP / (TP + FN)
+    F1 = 2 * r * p / (r + p)
+    acc = (TP + TN) / (TP + TN + FP + FN)
 
-    print('    DONE.')
-
+    logger.info("  ACC: {:}".format(acc))
+    logger.info("  F1: {:}".format(F1))
+    
 
 def main():
     args = parse()
@@ -454,11 +482,3 @@ def main():
 if __name__ == "__main__":
     main()
             
-        
-        
-        
-        
-        
-        
-        
-        

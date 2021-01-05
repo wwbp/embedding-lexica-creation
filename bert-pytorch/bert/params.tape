@@ -16,5 +16,6 @@ global {
   delta=(delta: 0 0.1 0.2)
 
   # dataset
-  dataset=(dataset: empathy distress emobank_V emobank_A emobank_D yelp_subset nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise)
+  dataset=(dataset: empathy distress emobank_V emobank_A emobank_D yelp_subset nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise amazon_finefood amazon_finefood_subset amazon_toys amazon_toys_subset song_joy song_sadness song_fear song_anger song_surprise song_disgust dialog_anger dialog_disgust dialog_fear dialog_joy dialog_sadness dialog_surprise friends_anger friends_disgust friends_fear friends_joy friends_sadness friends_surprise)
+  train_data=(train_data: empathy distress emobank_V emobank_A emobank_D yelp_subset nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise)
 }
