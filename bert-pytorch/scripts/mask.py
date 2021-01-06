@@ -11,7 +11,7 @@ import torch
 from torch.utils.data import DataLoader, SequentialSampler, TensorDataset
 from transformers import BertTokenizerFast, DistilBertTokenizerFast
 
-from utils.preprocess import getData
+from utils.preprocess import getData, splitData
 from utils.utils import get_dataset
 from models.modeling_bert import BertForSequenceClassification
 from models.modeling_distilbert import DistilBertForSequenceClassification
@@ -31,6 +31,9 @@ parser.add_argument("--task", required=True, type=str, help="Classification or r
 
 parser.add_argument("--model_kind", required=True, type=str)
 parser.add_argument("--model", required=True, type=str, help="The pretrained Bert model we choose.")
+parser.add_argument("--do_lower_case", action="store_true",
+                        help= "Whether to lower case the input text. Should be True for uncased \
+                            models and False for cased models.")
 parser.add_argument("--tokenizer", type=str, help="Dir to tokenizer for prediction.")
 
 parser.add_argument("--max_seq_length", type=int, default=128,
@@ -156,22 +159,30 @@ if __name__=="__main__":
         device = torch.device("cpu")
         
     df = getData(args.dataFolder, args.dataset, args.task)
+    logger.info("Total Data:{}".format(df.shape[0]))
+    if args.task == "classification":
+        df_train, df_dev, df_test = splitData(df, balanceTrain=True)
+    elif args.task == "regression":
+        df_train, df_dev, df_test = splitData(df, balanceTrain=False)
+    else:
+        logger.warning("Task Type Error!")
+    logger.info("Using Data:{}".format(df_train.shape[0]))
 
     # Load the BERT tokenizer.
     logger.info('Loading BERT tokenizer...')
     if args.model_kind == 'bert':
         try:
-            tokenizer = BertTokenizerFast.from_pretrained(args.tokenizer)
+            tokenizer = BertTokenizerFast.from_pretrained(args.tokenizer, do_lower_case=args.do_lower_case)
         except:
             logger.warning("Tokenizer loading failed")
         model = BertForSequenceClassification.from_pretrained(args.model).to(device)
     elif args.model_kind == 'distilbert':
         try:
-            tokenizer = DistilBertTokenizerFast.from_pretrained(args.tokenizer)
+            tokenizer = DistilBertTokenizerFast.from_pretrained(args.tokenizer, do_lower_case=args.do_lower_case)
         except:
             logger.warning("Tokenizer loading failed")
         model = DistilBertForSequenceClassification.from_pretrained(args.model).to(device)
     
-    input_ids, attention_masks = get_dataset(df.text.values, tokenizer, args.max_seq_length, args.task)
+    input_ids, attention_masks = get_dataset(df_train.text.values, tokenizer, args.max_seq_length, args.task)
     
     get_word_rating(model, input_ids, attention_masks, tokenizer, args.gold_word)

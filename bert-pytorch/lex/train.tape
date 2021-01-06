@@ -14,13 +14,14 @@ task mask : rg : data
   CUDA_VISIBLE_DEVICES=`free-gpu` PYTHONPATH=$rg python $rg/scripts/mask.py \
     --dataFolder=$data \
     --dataset=$dataset \
-    --output_dir=$rg/lexicon_final \
+    --output_dir=$rg/lexicon \
     --task=$task \
     --model_kind=$model_kind \
     --model=$model/best_model \
     --tokenizer=$model/best_model \
     --max_seq_length=$max_seq_length \
-    --batch_size=$train_batch_size
+    --batch_size=$train_batch_size \
+    --do_lower_case
 }
 
 task ps : rg : data
@@ -39,12 +40,13 @@ task ps : rg : data
   CUDA_VISIBLE_DEVICES=`free-gpu` PYTHONPATH=$rg python $rg/scripts/partition_shap.py \
     --dataFolder=$data \
     --dataset=$dataset \
-    --output_dir=$rg/lexicon_final \
+    --output_dir=$rg/lexicon \
     --task=$task \
     --model_kind=$model_kind \
     --model=$model/best_model \
     --tokenizer=$model/best_model \
-    --max_seq_length=$max_seq_length
+    --max_seq_length=$max_seq_length \
+    --do_lower_case
 }
 
 plan lex_mask {

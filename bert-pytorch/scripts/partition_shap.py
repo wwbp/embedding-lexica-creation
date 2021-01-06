@@ -10,7 +10,7 @@ import shap
 import torch
 from transformers import BertTokenizerFast, DistilBertTokenizerFast
 
-from utils.preprocess import getData
+from utils.preprocess import getData, splitData
 from utils.utils import get_dataset
 from models.modeling_bert import BertForSequenceClassification
 from models.modeling_distilbert import DistilBertForSequenceClassification
@@ -30,6 +30,9 @@ parser.add_argument("--task", required=True, type=str, help="Classification or r
 
 parser.add_argument("--model_kind", required=True, type=str)
 parser.add_argument("--model", required=True, type=str, help="The pretrained Bert model we choose.")
+parser.add_argument("--do_lower_case", action="store_true",
+                        help= "Whether to lower case the input text. Should be True for uncased \
+                            models and False for cased models.")
 parser.add_argument("--tokenizer", type=str, help="Dir to tokenizer for prediction.")
 
 parser.add_argument("--max_seq_length", type=int, default=128,
@@ -48,13 +51,15 @@ def get_word_rating(data, f, tokenizer, gold=None):
     word2values = {}
     exclude = ['[CLS]', '[SEP]', '[PAD]']
 
-    for index_sent, sent in enumerate(shap_values.data):
+    for index_sent, sent in enumerate(data):
+        sent = tokenizer.tokenize(sent)
+        assert len(sent) == len(shap_values.data[index_sent]) - 2
         for index_word, word in enumerate(sent):
             if word not in exclude:
                 if word not in word2values:
-                    word2values[word] = [shap_values.values[index_sent][index_word]]
+                    word2values[word] = [shap_values.values[index_sent][index_word+1]]
                 else:
-                    word2values[word].append(shap_values.values[index_sent][index_word])
+                    word2values[word].append(shap_values.values[index_sent][index_word+1])
 
     lexicon = {'Word':[], 'Value': [], 'Freq': []}
     for word in word2values:
@@ -95,27 +100,36 @@ if __name__=="__main__":
         device = torch.device("cpu")
         
     df = getData(args.dataFolder, args.dataset, args.task)
+    logger.info("Total Data:{}".format(df.shape[0]))
+    if args.task == "classification":
+        df_train, df_dev, df_test = splitData(df, balanceTrain=True)
+    elif args.task == "regression":
+        df_train, df_dev, df_test = splitData(df, balanceTrain=False)
+    else:
+        logger.warning("Task Type Error!")
+    logger.info("Using Data:{}".format(df_train.shape[0]))
+
 
     # Load the BERT tokenizer.
     logger.info('Loading BERT tokenizer...')
     if args.model_kind == 'bert':
         try:
-            tokenizer = BertTokenizerFast.from_pretrained(args.tokenizer)
+            tokenizer = BertTokenizerFast.from_pretrained(args.tokenizer, do_lower_case=args.do_lower_case)
         except:
             logger.warning("Tokenizer loading failed")
         model = BertForSequenceClassification.from_pretrained(args.model).to(device)
     elif args.model_kind == 'distilbert':
         try:
-            tokenizer = DistilBertTokenizerFast.from_pretrained(args.tokenizer)
+            tokenizer = DistilBertTokenizerFast.from_pretrained(args.tokenizer, do_lower_case=args.do_lower_case)
         except:
             logger.warning("Tokenizer loading failed")
         model = DistilBertForSequenceClassification.from_pretrained(args.model).to(device)
     
     def f(x):
         input_ids, attention_masks = get_dataset(x, tokenizer, args.max_seq_length, args.task)
-        input_ids = input_ids.cuda()
-        attention_masks = attention_masks.cuda()
+        input_ids = input_ids.to(device)
+        attention_masks = attention_masks.to(device)
         outputs = model(input_ids,attention_masks)[0][:, -1].detach().cpu().numpy()
         return outputs
     
-    get_word_rating(df.text.values, f, tokenizer, args.gold_word)
+    get_word_rating(df_train.text.values, f, tokenizer, args.gold_word)
