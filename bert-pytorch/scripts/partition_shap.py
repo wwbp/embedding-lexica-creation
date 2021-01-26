@@ -6,6 +6,8 @@ import pandas as pd
 import numpy as np
 from scipy import stats
 import shap
+import spacy
+import tokenizations
 
 import torch
 from transformers import BertTokenizerFast, DistilBertTokenizerFast
@@ -34,6 +36,7 @@ parser.add_argument("--do_lower_case", action="store_true",
                         help= "Whether to lower case the input text. Should be True for uncased \
                             models and False for cased models.")
 parser.add_argument("--tokenizer", type=str, help="Dir to tokenizer for prediction.")
+parser.add_argument("--do_alignment", action="store_true")
 
 parser.add_argument("--max_seq_length", type=int, default=128,
                     help="The maximum total input sequence length after WordPiece tokenization. ")
@@ -50,16 +53,33 @@ def get_word_rating(data, f, tokenizer, gold=None):
 
     word2values = {}
     exclude = ['[CLS]', '[SEP]', '[PAD]']
+    
+    if args.do_alignment:
+        tokenizer_spacy = spacy.load("en")
 
     for index_sent, sent in enumerate(data):
-        sent = tokenizer.tokenize(sent)
-        assert len(sent) == len(shap_values.data[index_sent]) - 2
-        for index_word, word in enumerate(sent):
-            if word not in exclude:
-                if word not in word2values:
-                    word2values[word] = [shap_values.values[index_sent][index_word+1]]
-                else:
-                    word2values[word].append(shap_values.values[index_sent][index_word+1])
+        sent_bert = tokenizer.tokenize(sent)
+        assert len(sent_bert) == len(shap_values.data[index_sent]) - 2
+        if args.do_alignment:
+            sent_spacy = [token.text.lower() for token in tokenizer_spacy(sent)]
+            _, alignment= tokenizations.get_alignments(sent_bert, sent_spacy)
+            for index_word, word in enumerate(sent_spacy):
+                if word not in exclude:
+                    value = 0
+                    for index in alignment[index_word]:
+                        value += shap_values.values[index_sent][index+1]
+                    if value != 0:
+                        if word not in word2values:
+                            word2values[word] = [value/len(alignment[index_word])]
+                        else:
+                            word2values[word].append(value/len(alignment[index_word]))
+        else:
+            for index_word, word in enumerate(sent_bert):
+                if word not in exclude:
+                    if word not in word2values:
+                        word2values[word] = [shap_values.values[index_sent][index_word+1]]
+                    else:
+                        word2values[word].append(shap_values.values[index_sent][index_word+1])
 
     lexicon = {'Word':[], 'Value': [], 'Freq': []}
     for word in word2values:

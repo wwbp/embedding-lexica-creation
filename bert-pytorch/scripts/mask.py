@@ -6,6 +6,8 @@ from tqdm import tqdm
 import numpy as np
 import pandas as pd
 from scipy import stats
+import spacy
+import tokenizations
 
 import torch
 from torch.utils.data import DataLoader, SequentialSampler, TensorDataset
@@ -35,6 +37,7 @@ parser.add_argument("--do_lower_case", action="store_true",
                         help= "Whether to lower case the input text. Should be True for uncased \
                             models and False for cased models.")
 parser.add_argument("--tokenizer", type=str, help="Dir to tokenizer for prediction.")
+parser.add_argument("--do_alignment", action="store_true")
 
 parser.add_argument("--max_seq_length", type=int, default=128,
                     help="The maximum total input sequence length after WordPiece tokenization. ")
@@ -45,12 +48,15 @@ parser.add_argument("--gold_word", type=str, default=None, help="Gold word ratin
 args = parser.parse_args()
 
 
-def get_word_rating(model, input_ids, attention_masks, tokenizer, gold):
+def get_word_rating(model, input_ids, attention_masks, text, tokenizer, gold):
     
     logger.info('Getting lexicon')
     
     word2values = {}
     exclude = ['[CLS]', '[SEP]', '[PAD]']
+    
+    if args.do_alignment:
+        tokenizer_spacy = spacy.load("en")
     
     model.to(device)
         
@@ -113,12 +119,31 @@ def get_word_rating(model, input_ids, attention_masks, tokenizer, gold):
 
         words = tokenizer.convert_ids_to_tokens(input_id)
         
-        for index, word in enumerate(words):
-            if word not in exclude:
-                if word not in word2values:
-                    word2values[word] = [value[index]]
-                else:
-                    word2values[word].append(value[index])
+        if args.do_alignment:
+            sent_spacy = [token.text.lower() for token in tokenizer_spacy(text[i])]
+            _, alignment= tokenizations.get_alignments(words, sent_spacy)
+            for index_word, word in enumerate(sent_spacy):
+                if word not in exclude:
+                    word_value = 0
+                    for index in alignment[index_word]:
+                        try:
+                            word_value += value[index]
+                        except IndexError:
+                            logger.info(words)
+                            logger.info(sent_spacy)
+                            logger.info(alignment)
+                    if word_value != 0:
+                        if word not in word2values:
+                            word2values[word] = [word_value/len(alignment[index_word])]
+                        else:
+                            word2values[word].append(word_value/len(alignment[index_word]))
+        else:
+            for index, word in enumerate(words):
+                if word not in exclude:
+                    if word not in word2values:
+                        word2values[word] = [value[index]]
+                    else:
+                        word2values[word].append(value[index])
              
     lexicon = {'Word':[], 'Value': [], 'Freq': []}
     for word in word2values:
@@ -185,4 +210,4 @@ if __name__=="__main__":
     
     input_ids, attention_masks = get_dataset(df_train.text.values, tokenizer, args.max_seq_length, args.task)
     
-    get_word_rating(model, input_ids, attention_masks, tokenizer, args.gold_word)
+    get_word_rating(model, input_ids, attention_masks, df_train.text.values, tokenizer, args.gold_word)

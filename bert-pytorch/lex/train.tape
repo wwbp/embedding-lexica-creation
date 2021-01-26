@@ -14,14 +14,15 @@ task mask : rg : data
   CUDA_VISIBLE_DEVICES=`free-gpu` PYTHONPATH=$rg python $rg/scripts/mask.py \
     --dataFolder=$data \
     --dataset=$dataset \
-    --output_dir=$rg/lexicon \
+    --output_dir=$rg/lexicon_whole \
     --task=$task \
     --model_kind=$model_kind \
     --model=$model/best_model \
     --tokenizer=$model/best_model \
     --max_seq_length=$max_seq_length \
     --batch_size=$train_batch_size \
-    --do_lower_case
+    --do_lower_case \
+    --do_alignment
 }
 
 task ps : rg : data
@@ -40,13 +41,14 @@ task ps : rg : data
   CUDA_VISIBLE_DEVICES=`free-gpu` PYTHONPATH=$rg python $rg/scripts/partition_shap.py \
     --dataFolder=$data \
     --dataset=$dataset \
-    --output_dir=$rg/lexicon \
+    --output_dir=$rg/lexicon_whole \
     --task=$task \
     --model_kind=$model_kind \
     --model=$model/best_model \
     --tokenizer=$model/best_model \
     --max_seq_length=$max_seq_length \
-    --do_lower_case
+    --do_lower_case \
+    --do_alignment
 }
 
 plan lex_mask {
@@ -73,4 +75,9 @@ plan lex_ps {
   * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: bert distilbert)
   reach ps via (dataset: emobank_V) * (task: classification regression) * (max_seq_length: 128) 
   * (train_batch_size: 32) * (model_kind: bert distilbert)
+}
+
+plan debug {
+  reach mask via (dataset: emobank_V) * (task: classification) * (max_seq_length: 128) 
+  * (train_batch_size: 32) * (model_kind: bert)
 }
