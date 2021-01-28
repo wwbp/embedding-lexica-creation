@@ -1,9 +1,16 @@
+from typing import *
 import datetime
 import logging
 
+import numpy as np
+import pandas as pd
+
 import torch
-from torch.utils.data import Subset
+from torch.utils.data import TensorDataset, Subset
 from torch._utils import _accumulate
+
+
+logger = logging.getLogger(__name__)
 
 
 def format_time(elapsed):
@@ -17,28 +24,44 @@ def format_time(elapsed):
     return str(datetime.timedelta(seconds=elapsed_rounded))
 
 
-def get_dataset(input, values, tokenizer, max_seq_length, task):
+def get_dataset(input: np.ndarray, tokenizer, max_seq_length: int, 
+                task: str, values: np.ndarray=None) -> Tuple[torch.Tensor]:
     encoded_dict = tokenizer(
-                        input.tolist(),                      # Sentence to encode.
-                        add_special_tokens = True, # Add '[CLS]' and '[SEP]'
-                        max_length = max_seq_length,    # Pad & truncate all sentences.
-                        pad_to_max_length = True, 
-                        return_tensors = 'pt',     # Return pytorch tensors.
-                        )
+        input.tolist(),                      # Sentence to encode.
+        add_special_tokens = True, # Add '[CLS]' and '[SEP]'
+        max_length = max_seq_length,    # Pad & truncate all sentences.
+        pad_to_max_length = True, 
+        return_tensors = 'pt',     # Return pytorch tensors.
+        truncation= True,
+        )
 
     # Convert the lists into tensors.
     input_ids = encoded_dict['input_ids'].long()
     attention_masks = encoded_dict['attention_mask'].float()
     
-    logging.info(values)
-    if '-' in task and task.split('-')[0] == 'classification':
-        for i in range(len(values)):
-            values[i] = (values[i] == task.split('-')[1])
-        values = torch.tensor(values.astype(int)).long()
+    if values is not None:
+        if task == "classification":
+            values = torch.tensor(values).long()
+        elif task == "regression":
+            values = torch.tensor(values).float()
+        else:
+            logger.info("Task type is not permitted")
+        
+        return input_ids, attention_masks, values
     else:
-        values = torch.tensor(values).float()
+        return input_ids, attention_masks
     
-    return input_ids, attention_masks, values
+    
+def prepare_data(df: pd.DataFrame, tokenizer, max_seq_length: int, task: str) -> TensorDataset:
+    data = df.text.values
+    values = df.label.values
+    
+    input_ids, attention_masks, values, = get_dataset(data, tokenizer, max_seq_length, 
+                                                      task, values)
+        
+    dataset = TensorDataset(input_ids, attention_masks, values)
+    
+    return dataset
 
 
 def k_fold_split(dataset, k):

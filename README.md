@@ -1,35 +1,47 @@
-# Empathic Reactions
+# Lexica
 
-This repository contains the dataset, experimental code and results presented in our EMNLP 2018.
-
-
-## Dataset
-Our dataset comprises 1860 short texts together with ratings for two kinds of empathic states, empathic concern and personal distress. It is, to our knowledge, the first publicly available gold standard for NLP-based empathy prediction. The `csv`-formatted data can be found [here](data/responses/data/messages.csv). For details regarding our annotation methodology please refer to the paper.
-
-## License
-Our dataset is available under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
-
-## Re-Running the Experiments
-We ran our code under Ubuntu 16.04.4. Our `conda` environment is specified in `environment.yaml`. To re-run our experiments, you have to add the root directory of the repository to you python path and setup an environment variable `VECTORS`. Details can be found in the script `activate_project_environment` and `constants.py`. Before running the script, make sure that you have a properely named `conda` environment set-up on your machine (default name is `emnlp18empathy`).
-
-Please note that re-running our code will produce varying results due to racing conditions caused by multi-threading.
-
-The necessary FastText word vectors can be found [here](https://fasttext.cc/docs/en/english-vectors.html).
-
-Once everything is set up, executing `run_experiments.sh` will re-run our cross-validation experiment. The results will be stored in `modeling/main/crossvalidation/results`.
-
-## Paper & Citation
-
-```
-@inproceedings{Buechel18emnlp,
-author={Buechel, Sven and Buffone, Anneke and Slaff, Barry and Ungar, Lyle and Sedoc, Jo{\~{a}}o},
-title = {Modeling Empathy and Distress in Reaction to News Stories},
-year = {2018}
-booktitle = {Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing (EMNLP 2018)}
-}
-```
-
-You can find our arXiv preprint [here](https://arxiv.org/pdf/1808.10399.pdf).
-
-## Contact
-I am happy to give additional information or get feedback about our work via email: sven.buechel@uni-jena.de
+## File structure
+- File Structure
+    - Method directories
+        - Each method will have its own directory containing all the code necessary to reproduce the results. 
+    - Lexica directory
+        - One directory for each method that contains all the lexica generated using the method for the following datasets
+            - yelp_subset train set
+            - amazon_finefood_subset train set
+            - amazon_toys_subset train set
+            - nrc_joy train set
+            - nrc_fear train set
+            - nrc_anger train set
+            - nrc_sadness train set
+            - nrc_surprise train set
+            - empathy train set
+        - For each lexicon, the name of the file is in the format of '[method]_[dataset].csv' where [method] can be [model]_[feature importance measure]. For example, 'ffn_deepshap_yelp_subset.csv'
+        - For each lexicon, the csv file should contain three columns with name 'word, score, wordcount' respectively, so that they can be easily fed into the lexica evaluation pipeline. Do not include index when writing out the csv file. 
+    - Evaluation directory
+        - It contains the lexica evaluation pipeline that can be used commonly across all methods (Roshan) and the evaluation results including F1, Accuracy and other metrics for both lexica and models
+        - Positive/Negative evaluations
+            - Train on:
+                - yelp_subset train set
+                - amazon_finefood_subset train set
+                - amazon_toys_subset train set
+                - empathy train set
+                - nrc_joy train set
+            - Evalutate on:
+                - yelp_subset test set
+                - amazon_finefood_subset test set
+                - amazon_toys_subset test set
+                - empathy test set
+                - nrc_joy test set
+                - song_joy
+                - dialog_joy
+                - friends_joy
+                - emobank
+        - Emotional Label evaluations
+            - Train on:
+                - nrc_[EMO] train set
+            - Evaluate on:
+                - nrc_[EMO]  test set
+                - song_[EMO] 
+                - dialog_[EMO] 
+                - friends_[EMO] 
+            - Where [EMO] = {joy, fear, anger, sadness, surprise}
