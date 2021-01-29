@@ -16,5 +16,5 @@ global {
   delta=(delta: 0 0.1 0.2)
 
   # dataset
-  dataset=(dataset: empathy distress emobank_V emobank_A emobank_D yelp_subset nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise)
+  dataset=(dataset: empathy distress emobank_V emobank_A emobank_D yelp_subset nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise amazon_finefood_subset amazon_toys_subset)
 }

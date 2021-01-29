@@ -65,6 +65,10 @@ plan PilotOnBert {
   * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: bert) * (pretrained: bert-base-uncased)
   reach trainOnBert via (dataset: nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise) * (task: classification) 
   * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: distilbert) * (pretrained: distilbert-base-uncased)
+  reach trainOnBert via (dataset: amazon_finefood_subset amazon_toys_subset) * (task: classification regression) * (max_seq_length: 128) 
+  * (train_batch_size: 32) * (model_kind: bert) * (pretrained: bert-base-uncased)
+  reach trainOnBert via (dataset: amazon_finefood_subset amazon_toys_subset) * (task: classification regression) * (max_seq_length: 128) 
+  * (train_batch_size: 32) * (model_kind: distilbert) * (pretrained: distilbert-base-uncased)
 }
 
 plan eval {

@@ -24,7 +24,7 @@ def format_time(elapsed):
     return str(datetime.timedelta(seconds=elapsed_rounded))
 
 
-def get_dataset(input: np.ndarray, tokenizer, max_seq_length: int, 
+def get_dataset(input, tokenizer, max_seq_length: int, 
                 task: str, values: np.ndarray=None) -> Tuple[torch.Tensor]:
     encoded_dict = tokenizer(
         input.tolist(),                      # Sentence to encode.

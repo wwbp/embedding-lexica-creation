@@ -1,21 +1,22 @@
 import argparse
 import logging
 import copy
+import os
 
 import numpy as np
 import pandas as pd
 from scipy import stats
 from deep_shap import DeepExplainer
+import spacy
+import tokenizations
 
 import torch
-from torch.utils.data import DataLoader, RandomSampler, TensorDataset
-from transformers import BertTokenizer
-from transformers import AdamW, get_linear_schedule_with_warmup
+from transformers import BertTokenizerFast, DistilBertTokenizerFast
 
+from utils.preprocess import getData, splitData
 from utils.utils import get_dataset
-from utils.bert_utils import get_word_embeddings
-from models.cnn import CNN
 from models.modeling_bert import BertForSequenceClassification
+from models.modeling_distilbert import DistilBertForSequenceClassification
 
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S',
@@ -25,19 +26,25 @@ logger = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--data", required=True, type=str, help="The input data. Should be .csv file.")
-parser.add_argument("--task", required=True, type=str, help="The task for empathy or distress.")
+parser.add_argument("--dataFolder", required=True, type=str, help="The input data dir.")
+parser.add_argument("--dataset", required=True, type=str, help="The dataset we use.")
+parser.add_argument("--output_dir", required=True, type=str, help="The output directory where the model checkpoints will be written.")
+parser.add_argument("--task", required=True, type=str, help="Classification or regression.")
+
+parser.add_argument("--model_kind", required=True, type=str)
 parser.add_argument("--model", required=True, type=str, help="The pretrained Bert model we choose.")
-parser.add_argument("--max_seq_length", type=int, default=128,
-                    help="The maximum total input sequence length after WordPiece tokenization. "
-                    "Sequences longer than this will be truncated, and sequences shorter "
-                    "than this will be padded.")
-parser.add_argument("--train_batch_size", type=int, default=32, help="Total batch size for training.")
-parser.add_argument("--output", type=str, help="The output directory where the lexicon will be written.")
+parser.add_argument("--do_lower_case", action="store_true",
+                        help= "Whether to lower case the input text. Should be True for uncased \
+                            models and False for cased models.")
 parser.add_argument("--tokenizer", type=str, help="Dir to tokenizer for prediction.")
+parser.add_argument("--do_alignment", action="store_true")
+
+parser.add_argument("--max_seq_length", type=int, default=128,
+                    help="The maximum total input sequence length after WordPiece tokenization. ")
+
 parser.add_argument("--gold_word", type=str, default=None, help="Gold word rating for evaluation.")
 
-args = parser.parse_args() 
+args = parser.parse_args()
 
 
 def get_word_rating(model, input_ids, word_embeddings, attention_masks, tokenizer ,gold, device):
@@ -98,21 +105,32 @@ if __name__=="__main__":
         logging.info('No GPU available, using the CPU instead.')
         device = torch.device("cpu")
         
-    corpus = pd.read_csv(args.data)
-    
-    data = corpus.essay.values
-    values = corpus[args.task].values
-    
+    df = getData(args.dataFolder, args.dataset, args.task)
+    logger.info("Total Data:{}".format(df.shape[0]))
+    if args.task == "classification":
+        df_train, df_dev, df_test = splitData(df, balanceTrain=True)
+    elif args.task == "regression":
+        df_train, df_dev, df_test = splitData(df, balanceTrain=False)
+    else:
+        logger.warning("Task Type Error!")
+    logger.info("Using Data:{}".format(df_train.shape[0]))
+
+
     # Load the BERT tokenizer.
-    logging.info('Loading BERT tokenizer...')
-    try:
-        tokenizer = BertTokenizer.from_pretrained(args.tokenizer)
-    except:
-        logging.warning("Tokenizer loading failed")
-    
-    bert_model = BertForSequenceClassification.from_pretrained(args.model).to(device)
-    
-    input_ids, attention_masks, values = get_dataset(data, values, tokenizer, args.max_seq_length)
+    logger.info('Loading BERT tokenizer...')
+    if args.model_kind == 'bert':
+        try:
+            tokenizer = BertTokenizerFast.from_pretrained(args.tokenizer, do_lower_case=args.do_lower_case)
+        except:
+            logger.warning("Tokenizer loading failed")
+        model = BertForSequenceClassification.from_pretrained(args.model).to(device)
+    elif args.model_kind == 'distilbert':
+        try:
+            tokenizer = DistilBertTokenizerFast.from_pretrained(args.tokenizer, do_lower_case=args.do_lower_case)
+        except:
+            logger.warning("Tokenizer loading failed")
+        model = DistilBertForSequenceClassification.from_pretrained(args.model).to(device)
+        
     word_embeddings = get_word_embeddings(bert_model, input_ids, attention_masks, args.train_batch_size, initial=True).to('cpu')
     logging.debug(word_embeddings.size())
     
