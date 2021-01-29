@@ -57,12 +57,10 @@ def get_word_rating(model, text, input_ids, word_embeddings, tokenizer ,gold):
     
     shap_values = []
     #for batch in tqdm(range(total_batch)):
-    for batch in tqdm(range(2)):
+    for batch in tqdm(range(word_embeddings.size(0))):
         batch_value = explainer.shap_values({'inputs_embeds':word_embeddings[batch:batch+1]})[-1]
         shap_values.append(np.array(batch_value).sum(axis=-1))
-    logger.info(shap_values)
     shap_values = np.concatenate(shap_values)
-    logger.info(shap_values.shape)
     logging.info("Calculated done!")
     
     word2values = {}
@@ -133,7 +131,7 @@ if __name__=="__main__":
     else:
         logging.info('No GPU available, using the CPU instead.')
         device = torch.device("cpu")
-        
+           
     df = getData(args.dataFolder, args.dataset, args.task)
     logger.info("Total Data:{}".format(df.shape[0]))
     if args.task == "classification":

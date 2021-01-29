@@ -112,7 +112,7 @@ plan lex_deep {
   #* (train_batch_size: 8) * (model_kind: bert distilbert)
   reach deep via (dataset: nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise) * (task: classification) 
   * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: bert distilbert)
-  reach deep via (dataset: emobank_V amazon_finefood_subset amazon_toys_subset) * (task: classification regression) * (max_seq_length: 128) 
+  reach deep via (dataset: amazon_finefood_subset amazon_toys_subset) * (task: classification regression) * (max_seq_length: 128) 
   * (train_batch_size: 32) * (model_kind: bert distilbert)
 }
 
