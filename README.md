@@ -15,7 +15,7 @@
             - nrc_sadness train set
             - nrc_surprise train set
             - empathy train set
-        - For each lexicon, the name of the file is in the format of '[dataset]_[method].csv' where [method] can be [model]_[feature importance measure]. For example, 'yelp_subset_ffn_deepshap.csv'
+        - For each lexicon, the name of the file is in the format of '[dataset]\_[method].csv' where [method] can be [model]_[feature importance measure]. For example, 'yelp_subset_ffn_deepshap.csv'
         - For each lexicon, the csv file should contain three columns with name 'word, score, word_count' respectively, so that they can be easily fed into the lexica evaluation pipeline. Do not include index when writing out the csv file. 
     - Evaluation directory
         - It contains the lexica evaluation pipeline that can be used commonly across all methods (Roshan) and the evaluation results including F1, Accuracy and other metrics for both lexica and models
