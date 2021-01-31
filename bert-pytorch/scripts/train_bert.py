@@ -6,6 +6,8 @@ import time
 import random
 import numpy as np
 from scipy import stats
+from sklearn.model_selection import cross_val_score
+from sklearn.linear_model import LogisticRegression
 
 import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
@@ -373,7 +375,7 @@ def run_train(device: torch.device, args):
 
 
 def run_predict(device: torch.device, args):
-    '''Unfinished'''
+    
     df = getData(args.dataFolder, args.dataset, args.task)
     if args.test_set:
         _, _, df = splitData(df, True)
@@ -420,6 +422,8 @@ def run_predict(device: torch.device, args):
     # Tracking variables 
     TP = TN = FN = FP = 0
 
+    score = []
+    label = []
     # Predict 
     for batch in prediction_dataloader:
         b_input_ids = batch[0].to(device)
@@ -433,25 +437,24 @@ def run_predict(device: torch.device, args):
                                  labels=b_labels)
 
         if args.task == 'classification':
-            logits = torch.argmax(logits, dim=1)
+            logits = torch.softmax(logits, dim=1)[:,1]
             
         # Move logits and labels to CPU
-        logits = logits.detach().cpu().numpy()
-        label_ids = b_labels.to('cpu').numpy()
+        score.append(logits.detach().cpu().numpy())
+        label.append(b_labels.to('cpu').numpy())
         
-        # Store predictions and true labels
-        TP += ((logits == 1) & (label_ids == 1)).sum().item()
-        TN += ((logits == 0) & (label_ids == 0)).sum().item()
-        FN += ((logits == 0) & (label_ids == 1)).sum().item()
-        FP += ((logits == 1) & (label_ids == 0)).sum().item()
+    score = np.concatenate(score)
+    label = np.concatenate(label)
+    logger.info(score.shape)
+    logger.info(label.shape)
+    score = score.reshape(-1,1)
     
-    p = TP / (TP + FP)
-    r = TP / (TP + FN)
-    F1 = 2 * r * p / (r + p)
-    acc = (TP + TN) / (TP + TN + FP + FN)
+    logModel = LogisticRegression()
+    modelAcc = np.round(np.mean(cross_val_score(logModel, score, label, cv=5, scoring='accuracy')),3)
+    modelF1 = np.round(np.mean(cross_val_score(logModel, score, label, cv=5, scoring='f1')),3)
 
-    logger.info("  ACC: {:}".format(acc))
-    logger.info("  F1: {:}".format(F1))
+    logger.info("  ACC: {:}".format(modelAcc))
+    logger.info("  F1: {:}".format(modelF1))
     
 
 def main():

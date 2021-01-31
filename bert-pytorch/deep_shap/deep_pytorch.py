@@ -1,16 +1,13 @@
-from tqdm import tqdm
 import logging
-import time
 import numpy as np
 import warnings
-from shap.explainers.explainer import Explainer
+from shap.explainers._explainer import Explainer
 from distutils.version import LooseVersion
-from torch.cuda.amp import GradScaler
 torch = None
 
 logger = logging.getLogger(__name__)
 
-class PyTorchDeepExplainer(Explainer):
+class PyTorchDeep(Explainer):
 
     def __init__(self, model, data):
         # try and import pytorch
@@ -22,9 +19,9 @@ class PyTorchDeepExplainer(Explainer):
 
         # check if we have multiple inputs
         self.multi_input = False
-        if len(data) > 1:
+        if type(data) == list:
             self.multi_input = True
-        self.data = [data['inputs_embeds'].to('cpu')]
+        self.data = [data['inputs_embeds']]
         self.layer = None
         self.input_handle = None
         self.interim = False
@@ -73,12 +70,13 @@ class PyTorchDeepExplainer(Explainer):
         Recursively for non-container layers
         """
         handles_list = []
-        for child in model.children():
-            if 'nn.modules.container' in str(type(child)):
+        model_children = list(model.children())
+        if model_children:
+            for child in model_children:
                 handles_list.extend(self.add_handles(child, forward_handle, backward_handle))
-            else:
-                handles_list.append(child.register_forward_hook(forward_handle))
-                handles_list.append(child.register_backward_hook(backward_handle))
+        else:  # leaves
+            handles_list.append(model.register_forward_hook(forward_handle))
+            handles_list.append(model.register_backward_hook(backward_handle))
         return handles_list
 
     def remove_attributes(self, model):
@@ -99,15 +97,11 @@ class PyTorchDeepExplainer(Explainer):
                 except AttributeError:
                     pass
 
-    def gradient(self, idx, inputs, scaler):
+    def gradient(self, idx, inputs):
         self.model.zero_grad()
         X = {'inputs_embeds': inputs[0].requires_grad_()}
-        outputs = []
-        for i in range(2):
-            x = {'inputs_embeds': X['inputs_embeds'][i*50:i*50+50].to(self.device)}
-            outputs.append(self.model(**x)[0])
-        outputs = torch.cat(outputs)
-        outputs = scaler.scale(outputs)
+        outputs = self.model(**X)[0]
+        #logger.info(outputs.device)
         selected = [val for val in outputs[:, idx]]
         grads = []
         if self.interim:
@@ -125,14 +119,11 @@ class PyTorchDeepExplainer(Explainer):
             return grads, [i.detach().cpu().numpy() for i in interim_inputs]
         else:
             for idx, x in enumerate(X):
-                grad = torch.autograd.grad(selected, X[x].to(self.device),
+                grad = torch.autograd.grad(selected, X[x],
                                            retain_graph=True if idx + 1 < len(X) else None,
                                            allow_unused=True)[0]
-                
                 if grad is not None:
-                    logger.info(torch.nonzero(grad))
                     grad = grad.cpu().numpy()
-                    logger.info(torch.nonzero(grad))
                 else:
                     grad = torch.zeros_like(X[x]).cpu().numpy()
                 grads.append(grad)
@@ -145,7 +136,7 @@ class PyTorchDeepExplainer(Explainer):
 
         X = []
         for i in inputs.values():
-            X.append(i.detach())
+            X.append(i.detach().to(self.device))
         if ranked_outputs is not None and self.multi_output:
             with torch.no_grad():
                 model_output_values = self.model(**inputs)
@@ -168,8 +159,6 @@ class PyTorchDeepExplainer(Explainer):
         if self.interim:
             self.add_target_handle(self.layer)
 
-        scaler = GradScaler()
-        
         # compute the attributions
         output_phis = []
         for i in range(model_output_ranks.shape[1]):
@@ -180,7 +169,7 @@ class PyTorchDeepExplainer(Explainer):
             else:
                 for k in range(len(X)):
                     phis.append(np.zeros(X[k].shape))
-            for j in tqdm(range(X[0].shape[0])):
+            for j in range(X[0].shape[0]):
                 # tile the inputs to line up with the background data samples
                 tiled_X = [X[l][j:j + 1].repeat(
                                    (self.data[l].shape[0],) + tuple([1 for k in range(len(X[l].shape) - 1)])) for l
@@ -188,21 +177,20 @@ class PyTorchDeepExplainer(Explainer):
                 joint_x = [torch.cat((tiled_X[l], self.data[l]), dim=0) for l in range(len(X))]
                 # run attribution computation graph
                 feature_ind = model_output_ranks[j, i]
-                sample_phis = self.gradient(feature_ind, joint_x, scaler)
-                
+                sample_phis = self.gradient(feature_ind, joint_x)
                 # assign the attributions to the right part of the output arrays
                 if self.interim:
                     sample_phis, output = sample_phis
                     x, data = [], []
-                    for i in range(len(output)):
-                        x_temp, data_temp = np.split(output[i], 2)
+                    for k in range(len(output)):
+                        x_temp, data_temp = np.split(output[k], 2)
                         x.append(x_temp)
                         data.append(data_temp)
                     for l in range(len(self.interim_inputs_shape)):
                         phis[l][j] = (sample_phis[l][self.data[l].shape[0]:] * (x[l] - data[l])).mean(0)
                 else:
                     for l in range(len(X)):
-                        phis[l][j] = (torch.from_numpy(sample_phis[l][self.data[l].shape[0]:]) * (X[l][j: j + 1] - self.data[l])).numpy().mean(0)
+                        phis[l][j] = (torch.from_numpy(sample_phis[l][self.data[l].shape[0]:]).to(self.device) * (X[l][j: j + 1] - self.data[l])).cpu().detach().numpy().mean(0)
             output_phis.append(phis[0] if not self.multi_input else phis)
         # cleanup; remove all gradient handles
         for handle in handles:
@@ -232,7 +220,7 @@ def deeplift_grad(module, grad_input, grad_output):
         if op_handler[module_type].__name__ not in ['passthrough', 'linear_1d']:
             return op_handler[module_type](module, grad_input, grad_output)
     else:
-        print('Warning: unrecognized nn.Module: {}'.format(module_type))
+        #print('Warning: unrecognized nn.Module: {}'.format(module_type))
         return grad_input
 
 
