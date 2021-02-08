@@ -1,0 +1,5 @@
+- In /diversityLSTM, execute ' export PYTHONPATH=$PYTHONPATH:$(pwd)
+- In /preprocess, execute run_preprocessing.sh (using bash run_preprocessing.sh) to get the precessed datasets. You should expect 25 .csv files and 25 .p files
+- In /Transparency, execute 'run_[dataset_name]' to get the result (including model predictions and lexica) for that particular dataset
+- When you have all the results, in /evaluation, run evaluate_model_lexicon.py to get genralization evaluation results of both model and lexica
+

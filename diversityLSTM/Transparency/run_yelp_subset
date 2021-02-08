@@ -1,0 +1,6 @@
+dataset_name=yelp_subset
+ppath=./preprocess/ourData/vec_yelp_subset.p
+model_name=diversity_lstm
+output_path=./experiments
+diversity_weight=0.5
+python train_and_run_experiments_bc.py --dataset ${dataset_name} --data_dir . --output_dir ${output_path} --encoder ${model_name} --diversity ${diversity_weight} --in_domain_dataset_name ${ppath}
