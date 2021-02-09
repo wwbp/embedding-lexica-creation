@@ -629,6 +629,12 @@ class DistilBertForSequenceClassification(DistilBertPreTrainedModel):
 
         return outputs  # (loss), logits, (hidden_states), (attentions)
 
+    def get_word_embeddings(
+        self,
+        input_ids,):
+        
+        return self.distilbert.embeddings(input_ids)
+
 
 @add_start_docstrings(
     """DistilBert Model with a span classification head on top for extractive question-answering tasks like SQuAD (a linear layers on top of

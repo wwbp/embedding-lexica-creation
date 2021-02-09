@@ -132,6 +132,7 @@ if __name__=="__main__":
         logging.info('No GPU available, using the CPU instead.')
         device = torch.device("cpu")
            
+    device = torch.device("cpu")
     df = getData(args.dataFolder, args.dataset, args.task)
     logger.info("Total Data:{}".format(df.shape[0]))
     if args.task == "classification":
