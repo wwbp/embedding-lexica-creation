@@ -640,7 +640,7 @@ class Model() :
         df_lexica = df.filter(['word','score','word_count'], axis = 1)
         df_lexica.dropna(inplace=True)
         filename = dataset.name + '_lstm_attention.csv'
-        df_lexica.to_csv("./lexica/"+filename, sep=',',index=False)
+        df_lexica.to_csv("diversityLSTM/Transparency/lexica/"+filename, sep=',',index=False)
         df.to_csv("./backup/"+"full_backup_"+filename, sep=',',index=False)
 
 

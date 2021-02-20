@@ -12,44 +12,13 @@ UNK = "<UNK>"
 
 import spacy, re
 
-# nlp = spacy.load('en', disable=["parser", "tagger", "ner"])
-nlp = spacy.load('/data2/link10/models/fasttext/en_fasttext_crawl',disable=["parser", "tagger", "ner"])
-
-# def cleaner(text, spacy=True):
-#     text = re.sub(r"\s+", " ", text.strip())
-#     if spacy:
-#         text = [t.text.lower() for t in nlp(text)]
-#     else:
-#         text = [t.lower() for t in text.split()]
-#     #text = ["qqq" if any(char.isdigit() for char in word) else word for word in text]
-#     return " ".join(text)
-
-def cleaner(text, spacy=True):
-    text = re.sub(r"\s+", " ", text.strip())
-    #with nlp.disable_pipes():
-    text = [t.text.lower() for t in nlp(text)]
-    return " ".join(text)
-
-def cleaner_mimic(text, spacy=True) :
-    text = re.sub(r'\s+', ' ', text.strip())
-    if spacy :
-        text = [t.text.lower() for t in nlp(text)]
-    else :
-        text = [t.lower() for t in text.split()]
-    text = " ".join(text)
-    text = re.sub(r'\[\s*\*\s*\*(.*?)\*\s*\*\s*\]', ' <DE> ', text)
-    text = re.sub(r'([^a-zA-Z0-9])(\s*\1\s*)+', r'\1 ', text)
-    text = re.sub(r'\s+', ' ', text.strip())
-    text = ['qqq' if any(char.isdigit() for char in word) else word for word in text.split(' ')]
-    return " ".join(text)
-
-
 class Vectorizer:
-    def __init__(self, num_words=None, min_df=None):
+    def __init__(self, tokenizer, num_words=None, min_df=None,):
         self.embeddings = None
         self.word_dim = 300
         self.num_words = num_words
         self.min_df = min_df
+        self.nlp = spacy.load(tokenizer, disable=["parser", "tagger", "ner"])
 
     def process_to_docs(self, texts):
         docs = [t.replace("\n", " ").strip() for t in texts]
@@ -61,7 +30,7 @@ class Vectorizer:
 
     def tokenizer(self, text):
         #Yilin Geng
-        text = cleaner(text)
+        text = self.cleaner(text)
         #end
         return text.split(" ")
 
@@ -142,7 +111,7 @@ class Vectorizer:
     # Yilin Geng 13/09/2020
     def extract_embeddings_for_fasttext(self, model):
 #         filename = "../.vector_cache/"+model
-        vectors = vo.Vectors(model,cache='./.vector_cache')
+        vectors = vo.Vectors(model, cache='./')
         self.word_dim = vectors.dim
         self.embeddings = np.zeros((len(self.idx2word), self.word_dim))
         in_pre = 0
@@ -184,6 +153,34 @@ class Vectorizer:
                 freq[w] += 1
         freq = freq / np.sum(freq)
         self.freq = freq
+
+    # def cleaner(text, spacy=True):
+    #     text = re.sub(r"\s+", " ", text.strip())
+    #     if spacy:
+    #         text = [t.text.lower() for t in nlp(text)]
+    #     else:
+    #         text = [t.lower() for t in text.split()]
+    #     #text = ["qqq" if any(char.isdigit() for char in word) else word for word in text]
+    #     return " ".join(text)
+
+    def cleaner(self, text, spacy=True):
+        text = re.sub(r"\s+", " ", text.strip())
+        #with nlp.disable_pipes():
+        text = [t.text.lower() for t in self.nlp(text)]
+        return " ".join(text)
+
+    def cleaner_mimic(self, text, spacy=True) :
+        text = re.sub(r'\s+', ' ', text.strip())
+        if spacy :
+            text = [t.text.lower() for t in self.nlp(text)]
+        else :
+            text = [t.lower() for t in text.split()]
+        text = " ".join(text)
+        text = re.sub(r'\[\s*\*\s*\*(.*?)\*\s*\*\s*\]', ' <DE> ', text)
+        text = re.sub(r'([^a-zA-Z0-9])(\s*\1\s*)+', r'\1 ', text)
+        text = re.sub(r'\s+', ' ', text.strip())
+        text = ['qqq' if any(char.isdigit() for char in word) else word for word in text.split(' ')]
+        return " ".join(text)
 
 
 from nltk.corpus import stopwords
