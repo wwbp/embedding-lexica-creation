@@ -57,7 +57,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.svm import LinearSVC
 
 sys.path.insert(0,'/data2/Datasets/')
-from preprocess import *
+from preprocessing.preprocess import *
 
 
 
@@ -422,7 +422,7 @@ def train_epoch_FFN(net, trainLoader, testLoader, optimizer, device='cuda:0'):
         optimizer.step()
 
 
-    acc,f1 = testModel_FFN(net, testLoader)
+    acc,f1 = testModel_FFN(net, testLoader, device=device)
     print(f"Acc : {acc} F1 : {f1}")
     print("*"*25)
 
@@ -451,7 +451,7 @@ def trainFFN(trainData, testData, num_epochs = 5, batchSize = 5, device='cuda:0'
     
     
     for i in range(num_epochs):
-        train_epoch_FFN(NNnet, trainLoader, testLoader, optimizer_NN)
+        train_epoch_FFN(NNnet, trainLoader, testLoader, optimizer_NN, device)
         
         
     return NNnet

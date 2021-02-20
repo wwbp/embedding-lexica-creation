@@ -1,6 +1,6 @@
 from sklearn.metrics import *
 import numpy as np
-from pandas.io.json.normalize import nested_to_record
+from pandas.io.json._normalize import nested_to_record
 from collections import defaultdict
 import pandas as pd
 from IPython.display import display

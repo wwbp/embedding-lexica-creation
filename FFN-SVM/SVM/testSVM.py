@@ -52,25 +52,41 @@ from pathlib import Path
 from joblib import dump, load
 
 import plotly.graph_objects as go
+import logging
 
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S',
+                    level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 ######### USER INPUTS ###########
-
-sys.path.insert(0,'/data1/YelpAnalysis/')
 from utils import *
+from preprocessing.preprocess import *
+import argparse
 
-nlp = spacy.load('/data2/link10/models/fasttext/en_fasttext_crawl')
+parser = argparse.ArgumentParser()
 
-sys.path.insert(0,'/data2/Datasets/')
-from preprocess import *
+parser.add_argument("--dataFolder", required=True, type=str, help="The input data dir.")
+parser.add_argument("--output_dir", required=True, type=str, help="The output directory where the model checkpoints will be written.")
 
-dataFolder = '/data2/Datasets/Raw'
+args = parser.parse_args()
+
+nlp = spacy.load('./fasttext')
 
 ## Dataset that will be used for creating the lexicon
 lexiconDataset = 'nrc_joy'
 dataList = ['nrc_joy','song_joy','dialog_joy','friends_joy']
 
+if torch.cuda.is_available():       
+    device = torch.device("cuda")
+    logger.info('There are {} GPU(s) available.'.format(torch.cuda.device_count()))
+    logger.info('We will use the GPU: {}'.format(torch.cuda.get_device_name(0)))
+
+else:
+    logger.info('No GPU available, using the CPU instead.')
+    device = torch.device("cpu")
+
 ##################################
+
 
 
 
@@ -87,7 +103,7 @@ lexiconWords, lexiconMap = getLexicon(df = lexiconDf)
 results = []
 
 for data in dataList:
-    results.append(testSVM(model, data,lexiconWords, lexiconMap, nlp, dataFolder))
+    results.append(testSVM(model, data,lexiconWords, lexiconMap, nlp, args.dataFolder))
 
 results = pd.DataFrame(results)
 results.columns = ['TestData','modelAcc', 'modelF1', 'lexiconAcc', 'lexiconF1']

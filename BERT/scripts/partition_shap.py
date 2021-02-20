@@ -55,7 +55,7 @@ def get_word_rating(data, f, tokenizer, gold=None):
     exclude = ['[CLS]', '[SEP]', '[PAD]']
     
     if args.do_alignment:
-        tokenizer_spacy = spacy.load("en")
+        tokenizer_spacy = spacy.load("./fasttext")
 
     for index_sent, sent in enumerate(data):
         sent_bert = tokenizer.tokenize(sent)

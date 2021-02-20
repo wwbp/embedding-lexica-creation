@@ -6,16 +6,15 @@ from tqdm import tqdm
 import numpy as np
 import pandas as pd
 from scipy import stats
-from deep_shap import Deep as DeepExplainer
 import spacy
 import tokenizations
 
 import torch
+from torch.utils.data import DataLoader, SequentialSampler, TensorDataset
 from transformers import BertTokenizerFast, DistilBertTokenizerFast
 
 from utils.preprocess import getData, splitData
 from utils.utils import get_dataset
-from utils.bert_utils import get_word_embeddings
 from models.modeling_bert import BertForSequenceClassification
 from models.modeling_distilbert import DistilBertForSequenceClassification
 
@@ -42,58 +41,110 @@ parser.add_argument("--do_alignment", action="store_true")
 
 parser.add_argument("--max_seq_length", type=int, default=128,
                     help="The maximum total input sequence length after WordPiece tokenization. ")
+parser.add_argument("--batch_size", type=int, default=32, help="Total batch size for training.")
 
 parser.add_argument("--gold_word", type=str, default=None, help="Gold word rating for evaluation.")
 
 args = parser.parse_args()
 
 
-def get_word_rating(model, text, input_ids, word_embeddings, tokenizer ,gold):
+def get_word_rating(model, input_ids, attention_masks, text, tokenizer, gold):
     
-    logging.info('Getting lexicon')
-    
-    logging.info('Getting Shapley values')
-    explainer = DeepExplainer(model, {'inputs_embeds':word_embeddings[:50]})
-    
-    shap_values = []
-    #for batch in tqdm(range(total_batch)):
-    for batch in tqdm(range(word_embeddings.size(0))):
-        batch_value = explainer.shap_values({'inputs_embeds':word_embeddings[batch:batch+1]})[-1]
-        shap_values.append(np.array(batch_value).sum(axis=-1))
-    shap_values = np.concatenate(shap_values)
-    logging.info("Calculated done!")
+    logger.info('Getting lexicon')
     
     word2values = {}
     exclude = ['[CLS]', '[SEP]', '[PAD]']
     
     if args.do_alignment:
-        tokenizer_spacy = spacy.load("en")
+        tokenizer_spacy = spacy.load("./fasttext")
     
-    for index_sent, sent in enumerate(text):
-        sent_bert = tokenizer.convert_ids_to_tokens(input_ids[index_sent])
+    model.to(device)
+        
+    dataset_ori = TensorDataset(input_ids, attention_masks)
+    dataloader_ori = DataLoader(
+        dataset_ori, sampler = SequentialSampler(dataset_ori), 
+        batch_size = args.batch_size)
+    
+    prediction_true = []
+    logger.info('Getting True Prediction')
+    for batch in tqdm(dataloader_ori):
+        
+        b_input_ids = batch[0].to(device)
+        b_attention_masks = batch[1].to(device)
+        
+        with torch.no_grad():
+            logits, _ = model(b_input_ids, b_attention_masks)
+            
+        if args.task == 'classification':
+            logits = logits[:,1]
+        
+        logits = logits.detach().to('cpu').numpy()
+        
+        prediction_true.append(logits)
+    prediction_true = np.concatenate(prediction_true).flatten()
+
+    logger.info('Getting word values')
+    for i in tqdm(range(input_ids.size(0))):
+        true = prediction_true[i]
+        input_id = input_ids[i]
+        attention_mask = attention_masks[i]
+
+        word_count = int(attention_mask.sum().item())
+        input_id_matrix = input_id.expand(word_count, -1)
+        attention_mask = attention_mask.repeat(word_count, 1)
+        attention_mask[torch.arange(word_count), torch.arange(word_count)] = 0
+        
+        dataset = TensorDataset(input_id_matrix, attention_mask)
+        dataloader = DataLoader(
+            dataset, sampler = SequentialSampler(dataset), 
+            batch_size = args.batch_size)
+        
+        prediction = []
+        for batch in dataloader:
+            
+            b_input_ids = batch[0].to(device)
+            b_attention_masks = batch[1].to(device)
+
+            with torch.no_grad():
+                logits, _ = model(b_input_ids, b_attention_masks)
+            
+            if args.task == 'classification':
+                logits = logits[:,1]
+                
+            logits = logits.detach().to('cpu').numpy()
+            prediction.append(logits)
+        
+        prediction = np.concatenate(prediction).flatten()
+        value = true - prediction
+
+        words = tokenizer.convert_ids_to_tokens(input_id)
+        
         if args.do_alignment:
-            sent_spacy = [token.text.lower() for token in tokenizer_spacy(sent)]
-            _, alignment= tokenizations.get_alignments(sent_bert, sent_spacy)
+            sent_spacy = [token.text.lower() for token in tokenizer_spacy(text[i])]
+            _, alignment= tokenizations.get_alignments(words, sent_spacy)
             for index_word, word in enumerate(sent_spacy):
                 if word not in exclude:
-                    value = 0
+                    word_value = 0
                     for index in alignment[index_word]:
-                        value += shap_values[index_sent][index]
-                    if value != 0:
+                        try:
+                            word_value += value[index]
+                        except IndexError:
+                            logger.info(words)
+                            logger.info(sent_spacy)
+                            logger.info(alignment)
+                    if word_value != 0:
                         if word not in word2values:
-                            word2values[word] = [value/len(alignment[index_word])]
+                            word2values[word] = [word_value/len(alignment[index_word])]
                         else:
-                            word2values[word].append(value/len(alignment[index_word]))
+                            word2values[word].append(word_value/len(alignment[index_word]))
         else:
-            for index, word in enumerate(sent_bert):
+            for index, word in enumerate(words):
                 if word not in exclude:
                     if word not in word2values:
-                        word2values[word] = [shap_values[index_sent][index]]
+                        word2values[word] = [value[index]]
                     else:
-                        word2values[word].append(shap_values[index_sent][index])
-                elif word == '[PAD]':
-                    break
-    
+                        word2values[word].append(value[index])
+             
     lexicon = {'Word':[], 'Value': [], 'Freq': []}
     for word in word2values:
         lexicon['Word'].append(word)
@@ -101,7 +152,7 @@ def get_word_rating(model, text, input_ids, word_embeddings, tokenizer ,gold):
         lexicon['Freq'].append(len(word2values[word]))
     
     lexicon_df = pd.DataFrame.from_dict(lexicon).sort_values(by='Value')
-
+    
     if gold is not None:
         gold = pd.read_csv(gold)
         gold.dropna()
@@ -113,8 +164,8 @@ def get_word_rating(model, text, input_ids, word_embeddings, tokenizer ,gold):
         
         pearson, _ = stats.pearsonr(merge_df['Value'], merge_df['Score'])
         logger.info("Pearson for word is %f" % pearson)
-    
-    output_file = os.path.join(args.output_dir, args.dataset+'_'+args.model_kind+'_'+args.task+'_deep.csv')
+
+    output_file = os.path.join(args.output_dir, args.dataset+'_'+args.model_kind+'_'+args.task+'_mask.csv')
     logger.info('Writing to %s' % output_file)
     lexicon_df.to_csv(output_file)
     
@@ -125,14 +176,13 @@ if __name__=="__main__":
     
     if torch.cuda.is_available():       
         device = torch.device("cuda")
-        logging.info('There are %d GPU(s) available.' % torch.cuda.device_count())
-        logging.info('We will use the GPU: %s' % str(torch.cuda.get_device_name(0)))
+        logger.info('There are {} GPU(s) available.'.format(torch.cuda.device_count()))
+        logger.info('We will use the GPU: {}'.format(torch.cuda.get_device_name(0)))
 
     else:
-        logging.info('No GPU available, using the CPU instead.')
+        logger.info('No GPU available, using the CPU instead.')
         device = torch.device("cpu")
-           
-    device = torch.device("cpu")
+        
     df = getData(args.dataFolder, args.dataset, args.task)
     logger.info("Total Data:{}".format(df.shape[0]))
     if args.task == "classification":
@@ -142,7 +192,6 @@ if __name__=="__main__":
     else:
         logger.warning("Task Type Error!")
     logger.info("Using Data:{}".format(df_train.shape[0]))
-
 
     # Load the BERT tokenizer.
     logger.info('Loading BERT tokenizer...')
@@ -158,8 +207,7 @@ if __name__=="__main__":
         except:
             logger.warning("Tokenizer loading failed")
         model = DistilBertForSequenceClassification.from_pretrained(args.model).to(device)
-        
-    input_ids, attention_masks = get_dataset(df_train.text.values, tokenizer, args.max_seq_length, args.task)
-    word_embeddings = get_word_embeddings(model, input_ids, attention_masks, 32, initial=True)
     
-    get_word_rating(model, df_train.text.values, input_ids, word_embeddings, tokenizer, args.gold_word)
+    input_ids, attention_masks = get_dataset(df_train.text.values, tokenizer, args.max_seq_length, args.task)
+    
+    get_word_rating(model, input_ids, attention_masks, df_train.text.values, tokenizer, args.gold_word)

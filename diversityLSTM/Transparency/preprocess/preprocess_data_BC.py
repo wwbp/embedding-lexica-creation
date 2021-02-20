@@ -1,6 +1,7 @@
 import argparse
 parser = argparse.ArgumentParser(description='Run Preprocessing on dataset')
 parser.add_argument('--data_file', type=str, required=True)
+parser.add_argument('--tokenizer_file', type=str, required=True)
 parser.add_argument("--output_file", type=str, required=True)
 # parser.add_argument('--word_vectors_type', type=str, choices=['glove.840B.300d', 'fasttext.simple.300d', 'mimic', 'pubmed','crawl-300d-2M.vec'], required=True)
 parser.add_argument('--min_df', type=int, required=True)
@@ -9,7 +10,7 @@ args, extras = parser.parse_known_args()
 args.extras = extras
 
 from Transparency.preprocess import vectorizer
-vec = vectorizer.Vectorizer(min_df=args.min_df)
+vec = vectorizer.Vectorizer(tokenizer=args.tokenizer_file, min_df=args.min_df)
 
 import pandas as pd 
 

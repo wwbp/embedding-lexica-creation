@@ -143,162 +143,162 @@ class Dataset() :
 ########################################## Dataset Loaders ################################################################################
 
 # def SST_dataset(args=None) :
-#     dataset = Dataset(name='sst', path='preprocess/SST/vec_sst.p', min_length=5, args=args)
+#     dataset = Dataset(name='sst', path='diversityLSTM/Transparency/preprocess/SST/vec_sst.p', min_length=5, args=args)
 #     set_balanced_pos_weight(dataset)
 #     return dataset
 
 # def IMDB_dataset(args=None) :
-#     dataset = Dataset(name='imdb', path='preprocess/IMDB/vec_imdb.p', min_length=6, args=args)
+#     dataset = Dataset(name='imdb', path='diversityLSTM/Transparency/preprocess/IMDB/vec_imdb.p', min_length=6, args=args)
 #     set_balanced_pos_weight(dataset)
 #     return dataset
 
 # def News20_dataset(args=None) :
-#     dataset = Dataset(name='20News_sports', path='preprocess/20News/vec_20news_sports.p', min_length=6, max_length=500, args=args)
+#     dataset = Dataset(name='20News_sports', path='diversityLSTM/Transparency/preprocess/20News/vec_20news_sports.p', min_length=6, max_length=500, args=args)
 #     set_balanced_pos_weight(dataset)
 #     return dataset
 
 # def Yelp(args=None) :
-#     dataset = Dataset(name='Yelp', path='preprocess/Yelp/vec_yelp.p', min_length=6, max_length = 150, args=args)
+#     dataset = Dataset(name='Yelp', path='diversityLSTM/Transparency/preprocess/Yelp/vec_yelp.p', min_length=6, max_length = 150, args=args)
 #     set_balanced_pos_weight(dataset)
 #     return dataset
 
 # def Amazon(args=None) :
-#     dataset = Dataset(name='Amazon', path='preprocess/Amazon/vec_amazon.p', min_length=6, max_length=100, args=args)
+#     dataset = Dataset(name='Amazon', path='diversityLSTM/Transparency/preprocess/Amazon/vec_amazon.p', min_length=6, max_length=100, args=args)
 #     set_balanced_pos_weight(dataset)
 #     return dataset
 
 # def ADR_dataset(args=None) :
-#     dataset = Dataset(name='tweet', path='preprocess/Tweets/vec_adr.p', min_length=5, max_length=100, args=args)
+#     dataset = Dataset(name='tweet', path='diversityLSTM/Transparency/preprocess/Tweets/vec_adr.p', min_length=5, max_length=100, args=args)
 #     set_balanced_pos_weight(dataset)
 #     return dataset
 
 # def Anemia_dataset(args=None) :
-#     dataset = Dataset(name='anemia', path='preprocess/MIMIC/vec_anemia.p', max_length=4000, args=args)
+#     dataset = Dataset(name='anemia', path='diversityLSTM/Transparency/preprocess/MIMIC/vec_anemia.p', max_length=4000, args=args)
 #     set_balanced_pos_weight(dataset)
 #     return dataset
 
 # def Diabetes_dataset(args=None) :
-#     dataset = Dataset(name='diab', path='preprocess/MIMIC/vec_diabetes.p', min_length=6, max_length=4000, args=args)
+#     dataset = Dataset(name='diab', path='diversityLSTM/Transparency/preprocess/MIMIC/vec_diabetes.p', min_length=6, max_length=4000, args=args)
 #     set_balanced_pos_weight(dataset)
 #     return dataset
 
 #Yilin Geng 09/07/2020
 def nrc_joy_dataset(args=None):
-    dataset = Dataset(name='nrc_joy', path='preprocess/ourData/vec_nrc_joy.p', min_length=6, args=args)
+    dataset = Dataset(name='nrc_joy', path='diversityLSTM/Transparency/preprocess/ourData/vec_nrc_joy.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 def nrc_sadness_dataset(args=None):
-    dataset = Dataset(name='nrc_sadness', path='preprocess/ourData/vec_nrc_sadness.p', min_length=6, args=args)
+    dataset = Dataset(name='nrc_sadness', path='diversityLSTM/Transparency/preprocess/ourData/vec_nrc_sadness.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 def nrc_fear_dataset(args=None):
-    dataset = Dataset(name='nrc_fear', path='preprocess/ourData/vec_nrc_fear.p', min_length=6, args=args)
+    dataset = Dataset(name='nrc_fear', path='diversityLSTM/Transparency/preprocess/ourData/vec_nrc_fear.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 def nrc_anger_dataset(args=None):
-    dataset = Dataset(name='nrc_anger', path='preprocess/ourData/vec_nrc_anger.p', min_length=6, args=args)
+    dataset = Dataset(name='nrc_anger', path='diversityLSTM/Transparency/preprocess/ourData/vec_nrc_anger.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 def nrc_surprise_dataset(args=None):
-    dataset = Dataset(name='nrc_surprise', path='preprocess/ourData/vec_nrc_surprise.p', min_length=6, args=args)
+    dataset = Dataset(name='nrc_surprise', path='diversityLSTM/Transparency/preprocess/ourData/vec_nrc_surprise.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 def empathy_dataset(args=None):
-    dataset = Dataset(name='empathy', path='preprocess/ourData/vec_empathy.p', min_length=6, args=args)
+    dataset = Dataset(name='empathy', path='diversityLSTM/Transparency/preprocess/ourData/vec_empathy.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 def amazon_finefood_subset_dataset(args=None):
-    dataset = Dataset(name='amazon_finefood_subset', path='preprocess/ourData/vec_amazon_finefood_subset.p', min_length=6, args=args)
+    dataset = Dataset(name='amazon_finefood_subset', path='diversityLSTM/Transparency/preprocess/ourData/vec_amazon_finefood_subset.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 def amazon_toys_subset_dataset(args=None):
-    dataset = Dataset(name='amazon_toys_subset', path='preprocess/ourData/vec_amazon_toys_subset.p', min_length=6, args=args)
+    dataset = Dataset(name='amazon_toys_subset', path='diversityLSTM/Transparency/preprocess/ourData/vec_amazon_toys_subset.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 def yelp_subset_dataset(args=None):
-    dataset = Dataset(name='yelp_subset', path='preprocess/ourData/vec_yelp_subset.p', min_length=6, args=args)
+    dataset = Dataset(name='yelp_subset', path='diversityLSTM/Transparency/preprocess/ourData/vec_yelp_subset.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 
 #External datasets
 def emobank_dataset(args=None) :
-    dataset = Dataset(name='emobank', path='preprocess/ourData/vec_emobank.p', min_length=6, args=args)
+    dataset = Dataset(name='emobank', path='diversityLSTM/Transparency/preprocess/ourData/vec_emobank.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 
 def song_joy_dataset(args=None) :
-    dataset = Dataset(name='song_joy', path='preprocess/ourData/vec_song_joy.p', min_length=6, args=args)
+    dataset = Dataset(name='song_joy', path='diversityLSTM/Transparency/preprocess/ourData/vec_song_joy.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 def song_sadness_dataset(args=None) :
-    dataset = Dataset(name='song_sadness', path='preprocess/ourData/vec_song_sadness.p', min_length=6, args=args)
+    dataset = Dataset(name='song_sadness', path='diversityLSTM/Transparency/preprocess/ourData/vec_song_sadness.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 def song_fear_dataset(args=None) :
-    dataset = Dataset(name='song_fear', path='preprocess/ourData/vec_song_fear.p', min_length=6, args=args)
+    dataset = Dataset(name='song_fear', path='diversityLSTM/Transparency/preprocess/ourData/vec_song_fear.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 def song_anger_dataset(args=None) :
-    dataset = Dataset(name='song_anger', path='preprocess/ourData/vec_song_anger.p', min_length=6, args=args)
+    dataset = Dataset(name='song_anger', path='diversityLSTM/Transparency/preprocess/ourData/vec_song_anger.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 def song_surprise_dataset(args=None) :
-    dataset = Dataset(name='song_surprise', path='preprocess/ourData/vec_song_surprise.p', min_length=6, args=args)
+    dataset = Dataset(name='song_surprise', path='diversityLSTM/Transparency/preprocess/ourData/vec_song_surprise.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 
 def dialog_joy_dataset(args=None) :
-    dataset = Dataset(name='dialog_joy', path='preprocess/ourData/vec_dialog_joy.p', min_length=6, args=args)
+    dataset = Dataset(name='dialog_joy', path='diversityLSTM/Transparency/preprocess/ourData/vec_dialog_joy.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 def dialog_sadness_dataset(args=None) :
-    dataset = Dataset(name='dialog_sadness', path='preprocess/ourData/vec_dialog_sadness.p', min_length=6, args=args)
+    dataset = Dataset(name='dialog_sadness', path='diversityLSTM/Transparency/preprocess/ourData/vec_dialog_sadness.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 def dialog_fear_dataset(args=None) :
-    dataset = Dataset(name='dialog_fear', path='preprocess/ourData/vec_dialog_fear.p', min_length=6, args=args)
+    dataset = Dataset(name='dialog_fear', path='diversityLSTM/Transparency/preprocess/ourData/vec_dialog_fear.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 def dialog_anger_dataset(args=None) :
-    dataset = Dataset(name='dialog_anger', path='preprocess/ourData/vec_dialog_anger.p', min_length=6, args=args)
+    dataset = Dataset(name='dialog_anger', path='diversityLSTM/Transparency/preprocess/ourData/vec_dialog_anger.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 def dialog_surprise_dataset(args=None) :
-    dataset = Dataset(name='dialog_surprise', path='preprocess/ourData/vec_dialog_surprise.p', min_length=6, args=args)
+    dataset = Dataset(name='dialog_surprise', path='diversityLSTM/Transparency/preprocess/ourData/vec_dialog_surprise.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 
 def friends_joy_dataset(args=None) :
-    dataset = Dataset(name='friends_joy', path='preprocess/ourData/vec_friends_joy.p', min_length=6, args=args)
+    dataset = Dataset(name='friends_joy', path='diversityLSTM/Transparency/preprocess/ourData/vec_friends_joy.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 def friends_sadness_dataset(args=None) :
-    dataset = Dataset(name='friends_sadness', path='preprocess/ourData/vec_friends_sadness.p', min_length=6, args=args)
+    dataset = Dataset(name='friends_sadness', path='diversityLSTM/Transparency/preprocess/ourData/vec_friends_sadness.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 def friends_fear_dataset(args=None) :
-    dataset = Dataset(name='friends_fear', path='preprocess/ourData/vec_friends_fear.p', min_length=6, args=args)
+    dataset = Dataset(name='friends_fear', path='diversityLSTM/Transparency/preprocess/ourData/vec_friends_fear.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 def friends_anger_dataset(args=None) :
-    dataset = Dataset(name='friends_anger', path='preprocess/ourData/vec_friends_anger.p', min_length=6, args=args)
+    dataset = Dataset(name='friends_anger', path='diversityLSTM/Transparency/preprocess/ourData/vec_friends_anger.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 def friends_surprise_dataset(args=None) :
-    dataset = Dataset(name='friends_surprise', path='preprocess/ourData/vec_friends_surprise.p', min_length=6, args=args)
+    dataset = Dataset(name='friends_surprise', path='diversityLSTM/Transparency/preprocess/ourData/vec_friends_surprise.p', min_length=6, args=args)
     set_balanced_pos_weight(dataset)
     return dataset
 
 # def amazon_baby_dataset(args=None) :
-#     dataset = Dataset(name='amazon_baby_subset', path='preprocess/ourData/vec_amazon_baby_subset.p', min_length=6, args=args)
+#     dataset = Dataset(name='amazon_baby_subset', path='diversityLSTM/Transparency/preprocess/ourData/vec_amazon_baby_subset.p', min_length=6, args=args)
 #     set_balanced_pos_weight(dataset)
 #     return dataset
 # def nyelp_dataset(args=None) :
-#     dataset = Dataset(name='nyelp', path='preprocess/ourData/vec_nyelp.p', min_length=6, args=args)
+#     dataset = Dataset(name='nyelp', path='diversityLSTM/Transparency/preprocess/ourData/vec_nyelp.p', min_length=6, args=args)
 #     set_balanced_pos_weight(dataset)
 #     return dataset
 # def nyelp_1v5_dataset(args=None) :
-#     dataset = Dataset(name='nyelp_1v5', path='preprocess/ourData/vec_nyelp_1v5.p', min_length=6, args=args)
+#     dataset = Dataset(name='nyelp_1v5', path='diversityLSTM/Transparency/preprocess/ourData/vec_nyelp_1v5.p', min_length=6, args=args)
 #     set_balanced_pos_weight(dataset)
 #     return dataset
 #end

@@ -1,6 +1,8 @@
+export LSTM=diversityLSTM/Transparency
+
 dataset_name=empathy
-ppath=./preprocess/ourData/vec_empathy.p
+ppath=$LSTM/preprocess/ourData/vec_empathy.p
 model_name=diversity_lstm
-output_path=./experiments
+output_path=$LSTM/experiments
 diversity_weight=0.5
-python train_and_run_experiments_bc.py --dataset ${dataset_name} --data_dir . --output_dir ${output_path} --encoder ${model_name} --diversity ${diversity_weight}  --in_domain_dataset_name ${ppath}
+python $LSTM/train_and_run_experiments_bc.py --dataset ${dataset_name} --data_dir . --output_dir ${output_path} --encoder ${model_name} --diversity ${diversity_weight}  --in_domain_dataset_name ${ppath}

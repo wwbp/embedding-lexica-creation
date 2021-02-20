@@ -151,11 +151,11 @@ class Evaluator() :
         # pdump(self.model, test_output, dataset_name+'_'+test_dataset_name+'_test_output')
         # pdump(self.model, predictions, dataset_name+'_'+test_dataset_name+'_predictions')
         # pdump(self.model, test_data.y, dataset_name+'_'+test_dataset_name+'_true_label')
-        eval_path = './evaluation/model_outputs/'
+        eval_path = 'diversityLSTM/Transparency/evaluation/model_outputs/'
         pred_filename = dataset_name+'_'+test_dataset_name+'_predictions_pdump.pkl'
         label_filename = dataset_name+'_'+test_dataset_name+'_true_label_pdump.pkl'
-        pickle.dump(predictions, open(eval_path+pred_filename), 'wb'))
-        pickle.dump(test_data.y, open(eval_path+label_filename), 'wb'))
+        pickle.dump(predictions, open(eval_path+pred_filename, 'wb'))
+        pickle.dump(test_data.y, open(eval_path+label_filename, 'wb'))
         
         return predictions, attentions
 

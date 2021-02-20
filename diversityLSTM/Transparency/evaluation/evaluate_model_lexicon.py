@@ -100,11 +100,11 @@ def eval_model(X,y):
     return modelAcc, modelF1
 
 def main():
-    path = './model_outputs/'
+    path = 'diversityLSTM/Transparency/evaluation/model_outputs/'
     train_dataset_list = ['nrc_joy','nrc_anger','nrc_sadness','nrc_surprise','nrc_fear','empathy','amazon_toys_subset','amazon_finefood_subset','yelp_subset']
     posneg_train_list = ['nrc_joy','empathy','amazon_toys_subset','amazon_finefood_subset','yelp_subset']
     posneg_eval_list = ['nrc_joy','friends_joy','song_joy','dialog_joy','emobank','empathy','amazon_toys_subset','amazon_finefood_subset','yelp_subset']
-    nlp = spacy.load('/data2/link10/models/fasttext/en_fasttext_crawl')
+    nlp = spacy.load('fasttext')
 
     for train_dataset_name in train_dataset_list:
         if train_dataset_name in posneg_train_list:
