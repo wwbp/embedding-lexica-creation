@@ -12,5 +12,6 @@ CUDA_VISIBLE_DEVICES=`free-gpu` PYTHONPATH=$rg python $rg/scripts/deepshap.py \
     --model=$model/best_model \
     --tokenizer=$model/best_model \
     --max_seq_length=128 \
+    --background_size=200 \
     --do_lower_case \
     --do_alignment

@@ -42,6 +42,7 @@ parser.add_argument("--do_alignment", action="store_true")
 
 parser.add_argument("--max_seq_length", type=int, default=128,
                     help="The maximum total input sequence length after WordPiece tokenization. ")
+parser.add_argument("--background_size", type=int, default=50,)
 
 parser.add_argument("--gold_word", type=str, default=None, help="Gold word rating for evaluation.")
 
