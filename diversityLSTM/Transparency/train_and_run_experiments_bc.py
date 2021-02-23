@@ -11,6 +11,17 @@ args, extras = parser.parse_known_args()
 args.extras = extras
 args.attention = 'tanh'
 
+
+import random
+import numpy as np
+import torch
+
+random.seed(42)
+np.random.seed(42)
+torch.manual_seed(42)
+torch.cuda.manual_seed(42)
+
+
 from Transparency.Trainers.DatasetBC import *
 from Transparency.ExperimentsBC import *
 
