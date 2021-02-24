@@ -150,13 +150,15 @@ class NNNet(nn.Module):
         self.fc2 = nn.Linear(1024, 512)
         self.fc3 = nn.Linear(512, 128)
         self.fc4 = nn.Linear(128, 2)
+        self.drop = nn.Dropout(0.7)        
                 
 
     def forward(self, x):
         
         x = F.relu(self.fc1(x))
+        # x = self.drop(x)
         x = F.relu(self.fc2(x))
-#         x = nn.Dropout()(x)
+        # x = self.drop(x)
         x = F.relu(self.fc3(x))
         x = self.fc4(x)
         
@@ -423,7 +425,11 @@ def train_epoch_FFN(net, trainLoader, testLoader, optimizer, device='cuda:0'):
 
 
     acc,f1 = testModel_FFN(net, testLoader, device=device)
-    print(f"Acc : {acc} F1 : {f1}")
+    print(f"Train Acc : {acc} Train F1 : {f1}")
+    print("*"*25)
+
+    acc,f1 = testModel_FFN(net, testLoader, device=device)
+    print(f"Test Acc : {acc} Test F1 : {f1}")
     print("*"*25)
 
     
@@ -438,7 +444,7 @@ def trainFFN(trainData, testData, num_epochs = 5, batchSize = 5, device='cuda:0'
     reconLoss = nn.MSELoss()
 
 
-    optimizer_NN = torch.optim.Adam(filter(lambda p: p.requires_grad, NNnet.parameters()), lr=0.0001)
+    optimizer_NN = torch.optim.Adam(filter(lambda p: p.requires_grad, NNnet.parameters()), lr=0.0001, weight_decay=1e-3)
 
     
 
