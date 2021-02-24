@@ -1,3 +1,8 @@
+##### Required python packages
+```bash
+pip install shap transformers spacy
+```
+
 ##### Download Tokenizer
 ```bash
 wget https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M.vec.zip
