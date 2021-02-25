@@ -1,3 +1,8 @@
+##### Required python packages
+```bash
+pip install shap transformers spacy
+```
+
 ##### Download Tokenizer
 ```bash
 cd BERT
