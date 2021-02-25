@@ -54,7 +54,7 @@ def get_word_rating(model, text, input_ids, word_embeddings, tokenizer ,gold):
     logging.info('Getting lexicon')
     
     logging.info('Getting Shapley values')
-    explainer = DeepExplainer(model, {'inputs_embeds':word_embeddings[:200]})
+    explainer = DeepExplainer(model, {'inputs_embeds':word_embeddings[:args.background_size]})
     
     shap_values = []
     #for batch in tqdm(range(total_batch)):
@@ -68,6 +68,7 @@ def get_word_rating(model, text, input_ids, word_embeddings, tokenizer ,gold):
     exclude = ['[CLS]', '[SEP]', '[PAD]']
     
     if args.do_alignment:
+        logger.info(os.getcwd())
         tokenizer_spacy = spacy.load("./fasttext")
     
     for index_sent, sent in enumerate(text):

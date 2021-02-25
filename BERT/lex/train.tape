@@ -80,7 +80,8 @@ task deep : rg : data
     --tokenizer=$model/best_model \
     --max_seq_length=$max_seq_length \
     --do_lower_case \
-    --do_alignment
+    --do_alignment \
+    --background_size=128
 }
 
 plan lex_mask {
