@@ -49,12 +49,12 @@ parser.add_argument("--gold_word", type=str, default=None, help="Gold word ratin
 args = parser.parse_args()
 
 
-def get_word_rating(model, text, input_ids, word_embeddings, tokenizer ,gold):
+def get_word_rating(model, text, input_ids, word_embeddings, background, tokenizer ,gold):
     
     logging.info('Getting lexicon')
     
     logging.info('Getting Shapley values')
-    explainer = DeepExplainer(model, {'inputs_embeds':word_embeddings[:args.background_size]})
+    explainer = DeepExplainer(model, {'inputs_embeds':background})
     
     shap_values = []
     #for batch in tqdm(range(total_batch)):
@@ -136,6 +136,9 @@ if __name__=="__main__":
            
     #device = torch.device("cpu")
     df = getData(args.dataFolder, args.dataset, args.task)
+    df_background = pd.read_csv("./FFN_DeepShap/backgrounds_500/"+args.dataset+"_500_bg.csv")
+    assert args.background_size <= 500
+    background = df_background.text.values[250-args.background_size/2:250+args.background_size/2]
     logger.info("Total Data:{}".format(df.shape[0]))
     if args.task == "classification":
         df_train, df_dev, df_test = splitData(df, balanceTrain=True)
@@ -162,6 +165,9 @@ if __name__=="__main__":
         model = DistilBertForSequenceClassification.from_pretrained(args.model).to(device)
         
     input_ids, attention_masks = get_dataset(df_train.text.values, tokenizer, args.max_seq_length, args.task)
+    input_ids_bg, attention_masks_bg = get_dataset(background, tokenizer, args.max_seq_length, args.task)
+
     word_embeddings = get_word_embeddings(model, input_ids, attention_masks, 32, initial=True)
+    word_embeddings_bg = get_word_embeddings(model, input_ids_bg, attention_masks_bg, 32, initial=True)
     
-    get_word_rating(model, df_train.text.values, input_ids, word_embeddings, tokenizer, args.gold_word)
+    get_word_rating(model, df_train.text.values, input_ids, word_embeddings, word_embeddings_bg, tokenizer, args.gold_word)
