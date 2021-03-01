@@ -55,7 +55,7 @@ def get_word_rating(data, f, tokenizer, gold=None):
     exclude = ['[CLS]', '[SEP]', '[PAD]']
     
     if args.do_alignment:
-        tokenizer_spacy = spacy.load("./fasttext")
+        tokenizer_spacy = spacy.load("/home/zwu49/ztwu/empathy_dictionary/BERT/fasttext")
 
     for index_sent, sent in enumerate(data):
         sent_bert = tokenizer.tokenize(sent)
@@ -146,7 +146,7 @@ if __name__=="__main__":
         model = DistilBertForSequenceClassification.from_pretrained(args.model).to(device)
     
     def f(x):
-        input_ids, attention_masks = get_dataset(x, tokenizer, args.max_seq_length, args.task)
+        input_ids, attention_masks = get_dataset(x, tokenizer, min(args.max_seq_length, 200), args.task)
         input_ids = input_ids.to(device)
         attention_masks = attention_masks.to(device)
         outputs = model(input_ids,attention_masks)[0][:, -1].detach().cpu().numpy()

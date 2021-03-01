@@ -44,10 +44,16 @@ task ps : rg : data
   model=${model//@/$task}
   model=${model//!/$train_batch_size}
 
+  out="/home/zwu49/ztwu/empathy_dictionary/bert-pytorch/lexicon_fast"
+  
+  if [ ! -d $out ]; then
+    mkdir $out
+  fi
+
   CUDA_VISIBLE_DEVICES=`free-gpu` PYTHONPATH=$rg python $rg/scripts/partition_shap.py \
     --dataFolder=$data \
     --dataset=$dataset \
-    --output_dir=/home/zwu49/ztwu/empathy_dictionary/bert-pytorch/lexicon \
+    --output_dir=$out \
     --task=$task \
     --model_kind=$model_kind \
     --model=$model/best_model \
@@ -91,10 +97,10 @@ plan lex_mask {
   * (train_batch_size: 16) * (model_kind: bert distilbert)
   #reach mask via (dataset: yelp_subset) * (task: classification regression) * (max_seq_length: 512) 
   #* (train_batch_size: 8) * (model_kind: bert distilbert)
-  reach mask via (dataset: nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise) * (task: classification) 
-  * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: bert distilbert)
-  reach mask via (dataset: empathy amazon_finefood_subset amazon_toys_subset) * (task: classification regression) * (max_seq_length: 128) 
-  * (train_batch_size: 32) * (model_kind: bert distilbert)
+  #reach mask via (dataset: nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise) * (task: classification) 
+  #* (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: bert distilbert)
+  #reach mask via (dataset: empathy amazon_finefood_subset amazon_toys_subset) * (task: classification regression) * (max_seq_length: 128) 
+  #* (train_batch_size: 32) * (model_kind: bert distilbert)
 }
 
 plan lex_ps {
