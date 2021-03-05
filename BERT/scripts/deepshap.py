@@ -138,7 +138,7 @@ if __name__=="__main__":
     df = getData(args.dataFolder, args.dataset, args.task)
     df_background = pd.read_csv("./FFN_DeepShap/backgrounds_500/"+args.dataset+"_500_bg.csv")
     assert args.background_size <= 500
-    background = df_background.text.values[250-args.background_size/2:250+args.background_size/2]
+    background = df_background.text.values[250-int(args.background_size/2):250+int(args.background_size/2)]
     logger.info("Total Data:{}".format(df.shape[0]))
     if args.task == "classification":
         df_train, df_dev, df_test = splitData(df, balanceTrain=True)

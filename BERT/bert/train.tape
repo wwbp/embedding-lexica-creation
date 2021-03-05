@@ -69,6 +69,10 @@ plan PilotOnBert {
   * (train_batch_size: 32) * (model_kind: bert) * (pretrained: bert-base-uncased)
   reach trainOnBert via (dataset: amazon_finefood_subset amazon_toys_subset) * (task: classification regression) * (max_seq_length: 128) 
   * (train_batch_size: 32) * (model_kind: distilbert) * (pretrained: distilbert-base-uncased)
+  reach trainOnBert via (dataset: yelp_subset) * (task: classification regression) * (max_seq_length: 200) 
+  * (train_batch_size: 16) * (model_kind: bert) * (pretrained: bert-base-uncased)
+  reach trainOnBert via (dataset: yelp_subset) * (task: classification regression) * (max_seq_length: 200) 
+  * (train_batch_size: 16) * (model_kind: distilbert) * (pretrained: distilbert-base-uncased)
 }
 
 plan eval_test {

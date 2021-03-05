@@ -5,7 +5,7 @@ global {
   pretrained=(pretrained: bert-base-uncased distilbert-base-uncased)
 
   # training hyper-parameters
-  max_seq_length=(max_seq_length: 128 256 512)
+  max_seq_length=(max_seq_length: 128 256 512 200)
   train_batch_size=(train_batch_size: 8 16 32 64 128)
   eval_batch_size=(eval_batch_size: 8 16 32)
   predict_batch_size=(predict_batch_size: 8 16 32)
