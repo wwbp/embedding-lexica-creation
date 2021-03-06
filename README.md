@@ -1,5 +1,10 @@
 # Lexica
 
+## Downloads data
+```bash
+wget http://wwbp.org/downloads/public_data/dataset-lexicon_project.zip
+```
+
 ## File structure
 - File Structure
     - Method directories

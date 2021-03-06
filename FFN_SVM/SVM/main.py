@@ -64,7 +64,7 @@ if __name__ == "__main__":
         
     for lexica in lexiconDataset2:
         model, lexiconDf = train_generate("nrc_"+lexica, nlp)
-        outfilename = f"{args.output_dir}/{lexica}_svm_feature.csv"
+        outfilename = f"{args.output_dir}/nrc_{lexica}_svm_feature.csv"
         lexiconDf.to_csv(outfilename, index = False, index_label = False)
 
         lexiconWords, lexiconMap = getLexicon(df = lexiconDf)
