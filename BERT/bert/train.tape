@@ -44,6 +44,7 @@ task evalOnBert : rg : data
     --do_lower_case \
     --max_seq_length=$max_seq_length \
     --predict_batch_size=$train_batch_size \
+    --test_set
 }
 
 plan PilotOnBert {
@@ -94,6 +95,13 @@ plan eval_test {
   * (max_seq_length: 128) * (train_batch_size: 32)
   reach evalOnBert via (train_data: empathy) * (dataset: nrc_joy empathy yelp_subset amazon_finefood_subset amazon_toys_subset) * (task: classification) * (model_kind: bert distilbert)
   * (max_seq_length: 128) * (train_batch_size: 32)
+  reach evalOnBert via (train_data: yelp_subset) * (dataset: nrc_joy empathy yelp_subset amazon_finefood_subset amazon_toys_subset) * (task: classification) * (model_kind: bert distilbert)
+  * (max_seq_length: 200) * (train_batch_size: 16)
+}
+
+plan temp {
+  reach evalOnBert via (train_data: yelp_subset) * (dataset: nrc_joy empathy yelp_subset amazon_finefood_subset amazon_toys_subset) * (task: classification) * (model_kind: bert distilbert)
+  * (max_seq_length: 200) * (train_batch_size: 16)
 }
 
 plan eval_other {
@@ -109,4 +117,6 @@ plan eval_other {
   * (max_seq_length: 128) * (train_batch_size: 32)
   reach evalOnBert via (train_data: yelp_subset) * (dataset: song_joy emobank_V dialog_joy friends_joy) 
   * (task: classification) * (model_kind: bert distilbert) * (max_seq_length: 256) * (train_batch_size: 16)
+  reach evalOnBert via (train_data: yelp_subset) * (dataset: song_joy emobank_V dialog_joy friends_joy) 
+  * (task: classification) * (model_kind: bert distilbert) * (max_seq_length: 200) * (train_batch_size: 16)
 }

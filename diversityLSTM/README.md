@@ -29,6 +29,7 @@ bash diversityLSTM/Transparency/run_[dataset_name]
 ##### Evaluation
 
 ```bash
-python diversityLSTM/Transparency/evaluation/evaluate_model_lexicon.py
+python diversityLSTM/Transparency/evaluation/evaluate_model_lexicon.py \
+    --dataFolder=[data location]
 ```
 

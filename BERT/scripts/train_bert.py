@@ -35,7 +35,7 @@ def parse():
     parser.add_argument("--task", required=True, type=str, help="Classification or regression.")
     parser.add_argument("--do_train", action="store_true", help="Whether to run training.")
     parser.add_argument("--do_predict", action="store_true", help="Whether to run prediction.")
-    parser.add_argument("--test_set", action="store_true", help="Whether pick test set from the whole daata.")
+    parser.add_argument("--test_set", action="store_true", help="Whether pick test set from the whole data.")
     
     parser.add_argument("--model_kind", required=True, type=str, help="Bert or distilBert.")
     parser.add_argument("--model", required=True, type=str, help="The pretrained Bert model we choose.")

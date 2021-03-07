@@ -1,13 +1,19 @@
 import pickle
+import argparse
 import numpy as np
 from sklearn.model_selection import cross_val_score
 from sklearn.linear_model import LogisticRegression
 import sys
 import spacy
 import pandas as pd
-sys.path.insert(0,'/data2/Datasets/')
-from preprocess import *
 
+from preprocessing.preprocess import *
+
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument("--dataFolder", required=True, type=str, help="The input data dir.")
+args = parser.parse_args()
 
 def getLexicon(file=None, df = None):
     
@@ -78,14 +84,13 @@ def evaluateLexicon(testDf, lexiconWords, lexiconMap, nlp, dataName=None, lexico
 
 
 def eval_lex(train_dataset_name, eval_dataset_name, nlp):
-    path = '../lexica/'
+    path = 'diversityLSTM/Transparency/lexica/'
     filename = path + train_dataset_name + '_lstm_attention.csv'
-    dataFolder = '/data2/Datasets/Raw'
     lexiconWords, lexiconMap = getLexicon(file = filename)
     if ('dialog' not in eval_dataset_name)and('song' not in eval_dataset_name)and('friends' not in eval_dataset_name)and('emobank' not in eval_dataset_name):
-        _, _, testDf = splitData(getData(dataFolder, eval_dataset_name))
+        _, _, testDf = splitData(getData(args.dataFolder, eval_dataset_name))
     else:
-        testDf = balanceData(getData(dataFolder, eval_dataset_name))
+        testDf = balanceData(getData(args.dataFolder, eval_dataset_name))
 
     lexAcc, lexF1 = evaluateLexicon(testDf, lexiconWords, lexiconMap, nlp, returnScores = True)
     return lexAcc, lexF1

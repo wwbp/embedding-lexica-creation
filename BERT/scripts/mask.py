@@ -56,7 +56,7 @@ def get_word_rating(model, input_ids, attention_masks, text, tokenizer, gold):
     exclude = ['[CLS]', '[SEP]', '[PAD]']
     
     if args.do_alignment:
-        tokenizer_spacy = spacy.load("/home/zwu49/ztwu/empathy_dictionary/BERT/fasttext")
+        tokenizer_spacy = spacy.load("fasttext")
     
     model.to(device)
         
@@ -208,6 +208,6 @@ if __name__=="__main__":
             logger.warning("Tokenizer loading failed")
         model = DistilBertForSequenceClassification.from_pretrained(args.model).to(device)
     
-    input_ids, attention_masks = get_dataset(df_train.text.values, tokenizer, min(args.max_seq_length, 200), args.task)
+    input_ids, attention_masks = get_dataset(df_train.text.values, tokenizer, args.max_seq_length, args.task)
     
     get_word_rating(model, input_ids, attention_masks, df_train.text.values, tokenizer, args.gold_word)
