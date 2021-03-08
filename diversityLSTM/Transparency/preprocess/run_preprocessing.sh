@@ -1,6 +1,7 @@
 export LSTM=diversityLSTM/Transparency
 
-python $LSTM/preprocess/dataset_process.py --data_folder /Users/nil/Desktop/JHU/Word/data
+# Define your own data directory
+python $LSTM/preprocess/dataset_process.py --data_folder /home/zwu49/ztwu/empathy_dictionary/data
 
 python $LSTM/preprocess/preprocess_data_BC.py --data_file $LSTM/preprocess/ourData/nrc_joy_dataset.csv --tokenizer_file fasttext --output_file $LSTM/preprocess/ourData/vec_nrc_joy.p --min_df 0
 

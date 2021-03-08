@@ -56,7 +56,7 @@ def get_word_rating(model, input_ids, attention_masks, text, tokenizer, gold):
     exclude = ['[CLS]', '[SEP]', '[PAD]']
     
     if args.do_alignment:
-        tokenizer_spacy = spacy.load("./fasttext")
+        tokenizer_spacy = spacy.load("fasttext")
     
     model.to(device)
         

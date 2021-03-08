@@ -4,7 +4,7 @@ package data :: .versioner=disk .path="/home/zwu49/ztwu/empathy_dictionary/data"
 global {
   grid="sge"
   gpuId="\$(free-gpu)"
-  pyenv="conda:nlp"
+  pyenv="conda:lexica"
 
   cpuActionFlags=""
 #  cpuResourceFlags="-l 'mem_free=30g,ram_free=30g'"

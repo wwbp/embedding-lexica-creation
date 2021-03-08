@@ -641,8 +641,6 @@ class Model() :
         df_lexica.dropna(inplace=True)
         filename = dataset.name + '_lstm_attention.csv'
         df_lexica.to_csv("diversityLSTM/Transparency/lexica/"+filename, sep=',',index=False)
-        df.to_csv("./backup/"+"full_backup_"+filename, sep=',',index=False)
-
 
         # df_tag = pd.DataFrame.from_dict(word_tag, orient='index', columns=['tag'])
         # df_tag.reset_index(inplace=True)
