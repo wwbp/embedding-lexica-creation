@@ -1,5 +1,5 @@
 global {
-  ducttape_output="lexicon_fast"
+  ducttape_output="lexicon_fast_sum"
   ducttape_experimental_packages=true
   ducttape_experimental_submitters="true"
   ducttape_experimental_imports="true"

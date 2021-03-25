@@ -55,7 +55,7 @@ def get_word_rating(data, f, tokenizer, gold=None):
     exclude = ['[CLS]', '[SEP]', '[PAD]']
     
     if args.do_alignment:
-        tokenizer_spacy = spacy.load("fasttext")
+        tokenizer_spacy = spacy.load("/home/zwu49/ztwu/empathy_dictionary/fasttext")
 
     for index_sent, sent in enumerate(data):
         sent_bert = tokenizer.tokenize(sent)
@@ -70,9 +70,11 @@ def get_word_rating(data, f, tokenizer, gold=None):
                         value += shap_values.values[index_sent][index+1]
                     if value != 0:
                         if word not in word2values:
-                            word2values[word] = [value/len(alignment[index_word])]
+                            #word2values[word] = [value/len(alignment[index_word])]
+                            word2values[word] = [value]
                         else:
-                            word2values[word].append(value/len(alignment[index_word]))
+                            #word2values[word].append(value/len(alignment[index_word]))
+                            word2values[word].append(value)
         else:
             for index_word, word in enumerate(sent_bert):
                 if word not in exclude:

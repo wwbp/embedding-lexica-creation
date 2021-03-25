@@ -56,7 +56,7 @@ def get_word_rating(model, input_ids, attention_masks, text, tokenizer, gold):
     exclude = ['[CLS]', '[SEP]', '[PAD]']
     
     if args.do_alignment:
-        tokenizer_spacy = spacy.load("fasttext")
+        tokenizer_spacy = spacy.load("/home/zwu49/ztwu/empathy_dictionary/fasttext")
     
     model.to(device)
         
@@ -134,9 +134,11 @@ def get_word_rating(model, input_ids, attention_masks, text, tokenizer, gold):
                             logger.info(alignment)
                     if word_value != 0:
                         if word not in word2values:
-                            word2values[word] = [word_value/len(alignment[index_word])]
+                            #word2values[word] = [word_value/len(alignment[index_word])]
+                            word2values[word] = [word_value]
                         else:
-                            word2values[word].append(word_value/len(alignment[index_word]))
+                            #word2values[word].append(word_value/len(alignment[index_word]))
+                            word2values[word].append(word_value)
         else:
             for index, word in enumerate(words):
                 if word not in exclude:

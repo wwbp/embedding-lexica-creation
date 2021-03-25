@@ -13,6 +13,7 @@ from sklearn.svm import LinearSVC
 import torch
 import torch.nn.functional as F
 from torch import nn
+import shap
 
 from preprocessing.preprocess import *
 
@@ -114,6 +115,12 @@ class NNNet(nn.Module):
         x = self.fc4(x)
         
         return x
+
+class SpacyTokenizer():
+    def __init__(self, tokenizer):
+        self.tokenizer = tokenizer
+
+    
     
     
 ###########################    
@@ -343,6 +350,72 @@ def getWordPred_FFN(NNnet, trainDf, nlp, device = 'cuda:0' ):
     
     return NNwordDf
 
+
+def getWordPred_FFN_PS(NNnet, trainDf, nlp, device):
+    
+    def f(x):
+
+    
+    logger.info('Getting word values')
+    explainer = shap.Explainer(f, nlp)
+    shap_values = explainer(trainDf)
+
+    word2values = {}
+    exclude = ['[CLS]', '[SEP]', '[PAD]']
+    
+    if args.do_alignment:
+        tokenizer_spacy = spacy.load("fasttext")
+
+    for index_sent, sent in enumerate(data):
+        sent_bert = tokenizer.tokenize(sent)
+        assert len(sent_bert) == len(shap_values.data[index_sent]) - 2
+        if args.do_alignment:
+            sent_spacy = [token.text.lower() for token in tokenizer_spacy(sent)]
+            _, alignment= tokenizations.get_alignments(sent_bert, sent_spacy)
+            for index_word, word in enumerate(sent_spacy):
+                if word not in exclude:
+                    value = 0
+                    for index in alignment[index_word]:
+                        value += shap_values.values[index_sent][index+1]
+                    if value != 0:
+                        if word not in word2values:
+                            word2values[word] = [value/len(alignment[index_word])]
+                        else:
+                            word2values[word].append(value/len(alignment[index_word]))
+        else:
+            for index_word, word in enumerate(sent_bert):
+                if word not in exclude:
+                    if word not in word2values:
+                        word2values[word] = [shap_values.values[index_sent][index_word+1]]
+                    else:
+                        word2values[word].append(shap_values.values[index_sent][index_word+1])
+
+    lexicon = {'Word':[], 'Value': [], 'Freq': []}
+    for word in word2values:
+        lexicon['Word'].append(word)
+        lexicon['Value'].append(np.mean(word2values[word]))
+        lexicon['Freq'].append(len(word2values[word]))
+
+    lexicon_df = pd.DataFrame.from_dict(lexicon).sort_values(by='Value')
+
+    if gold is not None:
+        gold = pd.read_csv(gold)
+        gold.dropna()
+        gold.columns = ['Word', 'Score', 'Std']
+        gold = gold[['Word', 'Score']]
+        #gold = gold[['Word', args.task+'.Mean.Sum']]
+        
+        merge_df = pd.merge(lexicon_df, gold, how='inner', on=['Word'])
+        
+        pearson, _ = stats.pearsonr(merge_df['Value'], merge_df['Score'])
+        logger.info("Pearson for word is %f" % pearson)
+
+    output_file = os.path.join(args.output_dir, args.dataset+'_'+args.model_kind+'_'+args.task+'_ps.csv')
+    logger.info('Writing to %s' % output_file)
+    lexicon_df.to_csv(output_file)
+    
+    logger.info('Done!')
+
     
 def trainFFN(trainData, testData, max_epochs = 5, batchSize = 5, device='cuda:0'):
     
@@ -402,9 +475,13 @@ def trainFFN(trainData, testData, max_epochs = 5, batchSize = 5, device='cuda:0'
     return best_model
     
     
-def generateLexicon_FFN(NNnet, trainDf, nlp, device = 'cuda:0'):
+def generateLexicon_FFN(NNnet, trainDf, nlp, method = 'feature', device = 'cuda:0'):
     
-    wordPred = getWordPred_FFN(NNnet, trainDf, nlp, device)
+    if method == 'feature':
+        wordPred = getWordPred_FFN(NNnet, trainDf, nlp, device)
+
+    elif method == 'partition':
+        wordPred = getWordPred_FFN_PS(NNnet, trainDf, nlp, device)
     
     return wordPred
 
