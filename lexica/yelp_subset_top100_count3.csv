@@ -1,0 +1,563 @@
+,Word,Value,Freq,Method
+0,unparalleled,1,3,"Bert_Mask, Bert_Partition, DistilBert_Mask, DistilBert_Partition, LSTM"
+1,plate-,1,3,Bert_Mask
+2,overdue,1,3,Bert_Mask
+3,hesitation,1,4,"Bert_Mask, DistilBert_Mask"
+4,pressured,1,5,Bert_Mask
+5,waaaay,1,3,Bert_Mask
+6,seamless,1,5,"Bert_Mask, DistilBert_Mask, FFN, SVM, LSTM"
+7,exquisitely,1,3,"Bert_Mask, DistilBert_Mask, DistilBert_Partition, LSTM"
+8,epicure,1,4,"Bert_Mask, DistilBert_Mask"
+9,encouraging,1,6,"Bert_Mask, Bert_Partition"
+10,redeemed,1,3,Bert_Mask
+11,understood,1,9,Bert_Mask
+12,fastest,1,6,"Bert_Mask, Bert_Partition, DistilBert_Mask, DistilBert_Partition"
+13,challenge,1,11,"Bert_Mask, Bert_Partition, DistilBert_Mask"
+14,manicurists,1,3,Bert_Mask
+15,goooood,1,3,Bert_Mask
+16,interrupted,1,10,Bert_Mask
+17,attractions,1,3,"Bert_Mask, Bert_Partition, DistilBert_Mask, DistilBert_Partition"
+18,thoughtful,1,7,"Bert_Mask, DistilBert_Mask, FFN, SVM"
+19,asset,1,5,"Bert_Mask, Bert_Partition, DistilBert_Mask, DistilBert_Partition"
+20,fortunate,1,9,"Bert_Mask, Bert_Partition"
+21,parfois,1,4,"Bert_Mask, DistilBert_Partition"
+22,genius,1,11,"Bert_Mask, DistilBert_Mask, DistilBert_Partition, LSTM"
+23,charm,1,8,Bert_Mask
+24,remarkable,1,10,"Bert_Mask, Bert_Partition"
+25,enjoyment,1,5,"Bert_Mask, DistilBert_Mask"
+26,baldwin,1,3,Bert_Mask
+27,admittedly,1,7,Bert_Mask
+28,unlikely,1,7,Bert_Mask
+29,song,1,15,Bert_Mask
+30,c'était,1,3,"Bert_Mask, Bert_Partition, DistilBert_Partition"
+31,malfunction,1,7,Bert_Mask
+32,receptionists,1,3,Bert_Mask
+33,insist,1,6,Bert_Mask
+34,davis,1,7,Bert_Mask
+35,painful,1,12,Bert_Mask
+36,discourage,1,5,"Bert_Mask, DistilBert_Mask"
+37,unheard,1,8,Bert_Mask
+38,hesitate,1,11,"Bert_Mask, DistilBert_Mask"
+39,frills,1,16,Bert_Mask
+40,specialist,1,7,Bert_Mask
+41,puddles,1,4,Bert_Mask
+42,pony,1,4,Bert_Mask
+43,digress,1,6,Bert_Mask
+44,perusing,1,6,"Bert_Mask, DistilBert_Mask"
+45,vapiano,1,5,Bert_Mask
+46,unbeatable,1,6,"Bert_Mask, FFN, FFN_DeepShap, SVM, LSTM"
+47,that-,1,5,"Bert_Mask, Bert_Partition"
+48,departments,1,5,Bert_Mask
+49,proved,1,18,Bert_Mask
+50,smokiness,1,3,"Bert_Mask, DistilBert_Mask"
+51,nous,1,4,"Bert_Mask, DistilBert_Mask"
+52,slowly,1,17,Bert_Mask
+53,pales,1,4,Bert_Mask
+54,focaccia,1,3,"Bert_Mask, Bert_Partition"
+55,speeds,1,4,Bert_Mask
+56,cheerful,1,6,"Bert_Mask, FFN, SVM, LSTM"
+57,overwhelming,1,20,Bert_Mask
+58,regret,1,51,Bert_Mask
+59,piping,1,11,"Bert_Mask, Bert_Partition"
+60,shoutout,1,3,"Bert_Mask, DistilBert_Mask, DistilBert_Partition, FFN, FFN_DeepShap, SVM, LSTM"
+61,fake,1,28,Bert_Mask
+62,stress,1,14,Bert_Mask
+63,spectacular,1,34,"Bert_Mask, DistilBert_Mask"
+64,entertained,1,8,Bert_Mask
+65,allergic,1,24,Bert_Mask
+66,exaggerating,1,3,"Bert_Mask, DistilBert_Mask"
+67,thirst,1,3,Bert_Mask
+68,straws,1,4,Bert_Mask
+69,greasiest,1,4,"Bert_Mask, DistilBert_Mask"
+70,complement,1,4,Bert_Mask
+71,researched,1,3,Bert_Mask
+72,biggie,1,3,Bert_Mask
+73,disallowed,1,3,Bert_Mask
+74,souvent,1,7,"Bert_Mask, DistilBert_Mask"
+75,blessed,1,4,"Bert_Mask, DistilBert_Partition, DistilBert_Mask"
+76,fool,1,8,Bert_Mask
+77,happier,1,17,Bert_Mask
+78,sears,1,6,Bert_Mask
+79,intense,1,10,Bert_Mask
+80,oversized,1,8,Bert_Mask
+81,wayyy,1,3,Bert_Mask
+82,dueling,1,3,"Bert_Mask, DistilBert_Mask"
+83,pudding,1,31,Bert_Mask
+84,shy,1,8,Bert_Mask
+85,:d,1,4,Bert_Mask
+86,supreme,1,3,Bert_Mask
+87,savoury,1,6,Bert_Mask
+88,exception,1,27,Bert_Mask
+89,ample,1,18,Bert_Mask
+90,snapper,1,11,Bert_Mask
+91,complains,1,3,Bert_Mask
+92,compliments,1,19,Bert_Mask
+93,watering,1,15,Bert_Mask
+94,nostalgic,1,6,"Bert_Mask, DistilBert_Mask"
+95,candied,1,5,Bert_Mask
+96,yuengling,1,7,Bert_Mask
+97,a.,1,10,Bert_Mask
+98,glad,1,185,Bert_Mask
+99,incredible,1,120,"Bert_Mask, DistilBert_Mask, DistilBert_Partition, LSTM"
+100,https://youtu.be/p7jfzklykos,1,3,"Bert_Partition, DistilBert_Partition"
+101,cacophony,1,3,Bert_Partition
+102,http://www.thedrake.ca/blog/2012/10/zombie-brunch-drake/,1,3,Bert_Partition
+103,proches,1,4,Bert_Partition
+104,singular,1,5,Bert_Partition
+105,godsend,1,3,Bert_Partition
+106,flautas,1,3,"Bert_Partition, DistilBert_Partition"
+107,kphx,1,3,"Bert_Partition, DistilBert_Partition"
+108,primanti,1,3,"Bert_Partition, DistilBert_Partition"
+109,flays,1,6,Bert_Partition
+110,kassie,1,3,"Bert_Partition, DistilBert_Partition"
+111,ridonkulous,1,3,Bert_Partition
+112,nowland,1,4,"Bert_Partition, DistilBert_Partition"
+113,hospitable,1,4,"Bert_Partition, DistilBert_Partition"
+114,sassy,1,8,"Bert_Partition, DistilBert_Partition, FFN, SVM"
+115,yummm,1,4,"Bert_Partition, DistilBert_Partition, LSTM"
+116,tôt,1,4,"Bert_Partition, DistilBert_Partition"
+117,passent,1,4,"Bert_Partition, DistilBert_Partition"
+118,-overall,1,3,"Bert_Partition, DistilBert_Partition"
+119,jalapenos,1,18,Bert_Partition
+120,chez,1,10,Bert_Partition
+121,brocach,1,6,"Bert_Partition, DistilBert_Partition"
+122,hyvee,1,4,Bert_Partition
+123,30min,1,11,Bert_Partition
+124,dining-,1,3,Bert_Partition
+125,dunk,1,4,Bert_Partition
+126,enviroment,1,3,"Bert_Partition, DistilBert_Partition"
+127,bouquets,1,3,Bert_Partition
+128,-washrooms,1,3,Bert_Partition
+129,fanatic,1,4,Bert_Partition
+130,erica,1,3,Bert_Partition
+131,11.95,1,4,Bert_Partition
+132,extremly,1,3,"Bert_Partition, DistilBert_Partition"
+133,suffocation,1,7,Bert_Partition
+134,1480,1,3,"Bert_Partition, DistilBert_Partition"
+135,pedi($50,1,3,"Bert_Partition, DistilBert_Partition"
+136,crustacés,1,5,Bert_Partition
+137,great-,1,8,"Bert_Partition, DistilBert_Mask, DistilBert_Partition"
+138,chimichangas,1,4,"Bert_Partition, DistilBert_Partition, FFN_DeepShap"
+139,cobraron,1,4,"Bert_Partition, DistilBert_Partition"
+140,flakey,1,5,Bert_Partition
+141,autobus,1,12,"Bert_Partition, DistilBert_Partition"
+142,chihweenie,1,3,Bert_Partition
+143,8/29/15,1,3,Bert_Partition
+144,jacked,1,7,Bert_Partition
+145,foodgasm,1,3,"Bert_Partition, DistilBert_Partition"
+146,delicous,1,7,"Bert_Partition, DistilBert_Partition, LSTM"
+147,birthdays,1,4,"Bert_Partition, FFN_DeepShap"
+148,skillets,1,3,"Bert_Partition, FFN_DeepShap"
+149,gossips,1,5,Bert_Partition
+150,kabobs,1,11,"Bert_Partition, DistilBert_Partition"
+151,halibut,1,18,Bert_Partition
+152,staffs,1,9,Bert_Partition
+153,bleach,1,6,Bert_Partition
+154,conscientious,1,3,"Bert_Partition, DistilBert_Partition"
+155,indulgent,1,4,Bert_Partition
+156,biodegradable,1,4,Bert_Partition
+157,primo,1,4,"Bert_Partition, DistilBert_Partition"
+158,baristas,1,12,"Bert_Partition, DistilBert_Partition"
+159,2&1/2,1,5,Bert_Partition
+160,margs,1,4,Bert_Partition
+161,delighted,1,12,Bert_Partition
+162,rwb,1,3,Bert_Partition
+163,knowledgable,1,28,"Bert_Partition, DistilBert_Partition, FFN, LSTM"
+164,steffes,1,3,"Bert_Partition, DistilBert_Mask"
+165,tinga,1,3,"Bert_Partition, FFN_DeepShap"
+166,omelettes,1,3,"Bert_Partition, DistilBert_Partition, FFN_DeepShap"
+167,neapolitan,1,3,"Bert_Partition, FFN_DeepShap"
+168,remodeling,1,3,Bert_Partition
+169,emt,1,4,Bert_Partition
+170,rockin,1,4,"Bert_Partition, DistilBert_Partition, SVM"
+171,hainan,1,3,Bert_Partition
+172,naugahyde,1,3,"Bert_Partition, DistilBert_Mask"
+173,chickpeas,1,5,Bert_Partition
+174,pizza(s),1,4,"Bert_Partition, DistilBert_Partition"
+175,byow,1,3,"Bert_Partition, FFN_DeepShap"
+176,s'mores,1,4,Bert_Partition
+177,omelets,1,3,Bert_Partition
+178,barista,1,4,"Bert_Partition, DistilBert_Partition"
+179,12/24/2011,1,5,Bert_Partition
+180,12/23/2011,1,5,Bert_Partition
+181,goto,1,6,Bert_Partition
+182,yummy,1,205,"Bert_Partition, DistilBert_Partition, LSTM"
+183,zerostars,1,5,Bert_Partition
+184,soupy,1,4,Bert_Partition
+185,newest,1,16,Bert_Partition
+186,euro,1,3,Bert_Partition
+187,cheesed,1,4,Bert_Partition
+188,flavourable,1,3,DistilBert_Mask
+189,perfect-,1,6,"DistilBert_Mask, DistilBert_Partition"
+190,warms,1,3,DistilBert_Mask
+191,3njpyable,1,3,DistilBert_Mask
+192,g.,1,4,DistilBert_Mask
+193,heatstroke,1,3,"DistilBert_Mask, DistilBert_Partition"
+194,quarters,1,6,DistilBert_Mask
+195,piquant,1,3,DistilBert_Mask
+196,promising,1,4,"DistilBert_Mask, DistilBert_Partition"
+197,ranks,1,4,"DistilBert_Mask, DistilBert_Partition"
+198,meticulous,1,10,DistilBert_Mask
+199,decorations,1,10,DistilBert_Mask
+200,tastebuds,1,4,DistilBert_Mask
+201,jokingly,1,3,DistilBert_Mask
+202,siu,1,4,DistilBert_Mask
+203,enticed,1,3,DistilBert_Mask
+204,diaper,1,4,DistilBert_Mask
+205,aweful,1,4,DistilBert_Mask
+206,charles,1,5,DistilBert_Mask
+207,alongside,1,4,DistilBert_Mask
+208,gorgeous,1,34,"DistilBert_Mask, DistilBert_Partition, FFN, SVM, LSTM"
+209,phenomenal,1,47,"DistilBert_Mask, DistilBert_Partition, LSTM"
+210,camps,1,4,DistilBert_Mask
+211,harlem,1,3,DistilBert_Mask
+212,toliet,1,3,DistilBert_Mask
+213,ippodu,1,5,"DistilBert_Mask, DistilBert_Partition"
+214,redemption,1,4,DistilBert_Mask
+215,stetson,1,5,"DistilBert_Mask, SVM"
+216,joynt,1,3,"DistilBert_Mask, DistilBert_Partition"
+217,genuine,1,21,DistilBert_Mask
+218,tummy,1,7,DistilBert_Mask
+219,intrigued,1,11,DistilBert_Mask
+220,brilliant,1,19,"DistilBert_Mask, LSTM"
+221,camper,1,6,"DistilBert_Mask, DistilBert_Partition, LSTM"
+222,festive,1,3,"DistilBert_Mask, DistilBert_Partition"
+223,thumpa,1,3,DistilBert_Mask
+224,geez,1,4,DistilBert_Mask
+225,snowsuit,1,3,DistilBert_Mask
+226,addictive,1,9,"DistilBert_Mask, DistilBert_Partition, LSTM"
+227,greatest,1,26,DistilBert_Mask
+228,sketchy,1,9,DistilBert_Mask
+229,windshield,1,8,DistilBert_Mask
+230,pricey,1,121,DistilBert_Mask
+231,truthfully,1,3,DistilBert_Mask
+232,salesy,1,3,DistilBert_Mask
+233,thrilling,1,3,DistilBert_Mask
+234,tenaya,1,3,DistilBert_Mask
+235,monorail,1,5,DistilBert_Mask
+236,tiniest,1,7,"DistilBert_Mask, DistilBert_Partition"
+237,armed,1,4,DistilBert_Mask
+238,zumba,1,4,DistilBert_Mask
+239,potstickers,1,6,"DistilBert_Mask, FFN"
+240,platters,1,5,DistilBert_Mask
+241,settings,1,5,DistilBert_Mask
+242,congratulations,1,4,DistilBert_Mask
+243,alarmed,1,6,DistilBert_Mask
+244,perused,1,3,DistilBert_Mask
+245,larry,1,4,DistilBert_Mask
+246,chaat,1,4,DistilBert_Mask
+247,titles,1,6,DistilBert_Mask
+248,creepy,1,11,DistilBert_Mask
+249,wrought,1,3,DistilBert_Mask
+250,healthier,1,13,DistilBert_Mask
+251,expertly,1,6,"DistilBert_Mask, FFN"
+252,ginko,1,4,DistilBert_Mask
+253,pigs,1,9,DistilBert_Mask
+254,garaged,1,5,DistilBert_Mask
+255,outstanding,1,117,"DistilBert_Mask, DistilBert_Partition, FFN, LSTM"
+256,3/29/16,1,3,"DistilBert_Mask, DistilBert_Partition"
+257,darling,1,3,DistilBert_Mask
+258,adopted,1,4,DistilBert_Mask
+259,financjal,1,3,DistilBert_Partition
+260,restraunt,1,4,DistilBert_Partition
+261,retard,1,4,DistilBert_Partition
+262,l'autobus,1,4,DistilBert_Partition
+263,hyped,1,6,DistilBert_Partition
+264,eggy,1,3,DistilBert_Partition
+265,eefco,1,4,DistilBert_Partition
+266,cripplingly,1,4,DistilBert_Partition
+267,avance,1,4,DistilBert_Partition
+268,dcs,1,5,DistilBert_Partition
+269,elegance,1,3,"DistilBert_Partition, LSTM"
+270,pb&j,1,6,DistilBert_Partition
+271,j'ai,1,10,DistilBert_Partition
+272,moo,1,5,DistilBert_Partition
+273,bier,1,7,DistilBert_Partition
+274,syncing,1,3,DistilBert_Partition
+275,retards,1,4,DistilBert_Partition
+276,bruschetta,1,9,DistilBert_Partition
+277,passe,1,20,DistilBert_Partition
+278,proves,1,3,DistilBert_Partition
+279,93,1,4,DistilBert_Partition
+280,sweetest,1,8,"DistilBert_Partition, FFN, FFN_DeepShap, SVM"
+281,responsiveness,1,3,DistilBert_Partition
+282,remodel,1,10,DistilBert_Partition
+283,kenia,1,5,DistilBert_Partition
+284,colorist,1,3,"DistilBert_Partition, LSTM"
+285,helpfully,1,3,DistilBert_Partition
+286,predictably,1,4,DistilBert_Partition
+287,mexian,1,5,DistilBert_Partition
+288,soliciting,1,3,DistilBert_Partition
+289,accommodating,1,90,"DistilBert_Partition, FFN, SVM, LSTM"
+290,leona,1,3,DistilBert_Partition
+291,attentiveness,1,6,DistilBert_Partition
+292,unquestionably,1,3,DistilBert_Partition
+293,deems,1,4,DistilBert_Partition
+294,tasteful,1,7,"DistilBert_Partition, LSTM"
+295,pallazzo,1,3,DistilBert_Partition
+296,amazing,1,1189,"DistilBert_Partition, FFN, SVM, LSTM"
+297,jukebox,1,3,DistilBert_Partition
+298,endroit,1,3,"DistilBert_Partition, LSTM"
+299,carnivore,1,3,DistilBert_Partition
+300,excellent,1,577,"DistilBert_Partition, LSTM"
+301,responsive,1,23,"FFN, SVM"
+302,breeze,1,11,"FFN, SVM"
+303,maltipoo,1,5,"FFN, SVM"
+304,personable,1,48,"FFN, SVM, LSTM"
+305,18-pound,1,3,"FFN, SVM"
+306,cutest,1,4,"FFN, SVM"
+307,adorable,1,17,"FFN, SVM, LSTM"
+308,housemade,1,3,"FFN, SVM"
+309,approachable,1,11,"FFN, SVM"
+310,athleta,1,3,"FFN, SVM"
+311,mixins,1,3,"FFN, SVM"
+312,terrific,1,32,"FFN, SVM"
+313,knowledgeable,1,105,"FFN, LSTM"
+314,goodies,1,13,"FFN, SVM"
+315,savory,1,31,"FFN, SVM"
+316,lawrenceville,1,5,"FFN, SVM"
+317,calming,1,12,"FFN, SVM"
+318,prompt,1,69,"FFN, SVM, LSTM"
+319,scrumptious,1,10,"FFN, FFN_DeepShap, SVM, LSTM"
+320,pastitsio,1,3,"FFN, SVM"
+321,misti,1,3,"FFN, SVM"
+322,friendliest,1,16,"FFN, SVM"
+323,faves,1,6,"FFN, SVM"
+324,punctual,1,8,"FFN, SVM"
+325,hearty,1,22,"FFN, SVM"
+326,timely,1,48,FFN
+327,purrfect,1,8,"FFN, SVM"
+328,ease,1,14,"FFN, SVM"
+329,flexible,1,10,FFN
+330,superb,1,63,FFN
+331,deadlines,1,4,"FFN, SVM"
+332,wonderful,1,327,"FFN, SVM, LSTM"
+333,benedict,1,47,"FFN, SVM"
+334,marvelous,1,7,FFN
+335,favs,1,7,"FFN, SVM"
+336,piccata,1,6,"FFN, SVM"
+337,awesome,1,697,"FFN, SVM, LSTM"
+338,adore,1,8,FFN
+339,dependable,1,3,"FFN, SVM"
+340,relaxed,1,32,"FFN, SVM, LSTM"
+341,handy,1,12,"FFN, SVM"
+342,aladdin,1,5,FFN
+343,delightful,1,42,"FFN, LSTM"
+344,challenges,1,5,"FFN, SVM"
+345,smile,1,126,"FFN, SVM"
+346,insightful,1,3,FFN
+347,relaxing,1,66,"FFN, SVM"
+348,favorites,1,74,FFN
+349,baklava,1,22,"FFN, SVM"
+350,fantastic,1,362,"FFN, LSTM"
+351,koobideh,1,5,"FFN, SVM"
+352,grouper,1,4,FFN
+353,vce,1,9,FFN
+354,georgian,1,6,"FFN, SVM"
+355,courteous,1,80,"FFN, SVM, LSTM"
+356,delight,1,35,FFN
+357,assisted,1,14,FFN
+358,thorough,1,49,FFN
+359,kitties,1,3,FFN
+360,manapua,1,5,FFN
+361,adam,1,18,"FFN, SVM"
+362,appreciative,1,3,FFN
+363,dumplings,1,88,FFN
+364,painless,1,8,"FFN, FFN_DeepShap, SVM"
+365,kensington,1,10,FFN
+366,fav,1,22,"FFN, SVM, LSTM"
+367,pies,1,10,"FFN, SVM"
+368,specializes,1,4,FFN
+369,radiant,1,3,"FFN, SVM"
+370,wontons,1,22,FFN
+371,branzino,1,5,FFN
+372,loving,1,27,"FFN, SVM"
+373,spacious,1,50,"FFN, SVM"
+374,casbah,1,4,"FFN, FFN_DeepShap, SVM"
+375,nabemono,1,5,FFN
+376,fabulous,1,84,"FFN, LSTM"
+377,communicative,1,4,FFN
+378,speedy,1,16,FFN
+379,lovely,1,132,FFN
+380,enjoyed,1,360,FFN
+381,gadgets,1,5,"FFN, SVM"
+382,roomy,1,4,"FFN, SVM"
+383,loved,1,439,"FFN, LSTM"
+384,compassionate,1,7,FFN
+385,redhead,1,5,"FFN, SVM"
+386,braised,1,37,FFN
+387,kai,1,3,FFN_DeepShap
+388,centennial,1,3,FFN_DeepShap
+389,francesca,1,3,"FFN_DeepShap, LSTM"
+390,innovative,1,3,FFN_DeepShap
+391,prickly,1,4,FFN_DeepShap
+392,supportive,1,3,FFN_DeepShap
+393,martina,1,3,FFN_DeepShap
+394,tracy,1,5,FFN_DeepShap
+395,macaroons,1,3,FFN_DeepShap
+396,eyelashes,1,3,FFN_DeepShap
+397,savoring,1,3,FFN_DeepShap
+398,bronze,1,4,FFN_DeepShap
+399,becca,1,7,FFN_DeepShap
+400,beavertails,1,3,FFN_DeepShap
+401,baklavas,1,3,FFN_DeepShap
+402,quiches,1,4,FFN_DeepShap
+403,sharon,1,4,FFN_DeepShap
+404,shawn,1,3,FFN_DeepShap
+405,mei,1,3,FFN_DeepShap
+406,gabe,1,3,FFN_DeepShap
+407,fontina,1,4,FFN_DeepShap
+408,grandchildren,1,3,FFN_DeepShap
+409,crêpe,1,5,FFN_DeepShap
+410,scenery,1,5,"FFN_DeepShap, LSTM"
+411,tabouli,1,3,FFN_DeepShap
+412,couscous,1,4,FFN_DeepShap
+413,marcus,1,4,FFN_DeepShap
+414,cosmo,1,5,FFN_DeepShap
+415,swift,1,3,FFN_DeepShap
+416,linda,1,5,FFN_DeepShap
+417,cannoli,1,8,FFN_DeepShap
+418,nailed,1,3,FFN_DeepShap
+419,designs,1,9,FFN_DeepShap
+420,unwind,1,6,FFN_DeepShap
+421,wally,1,3,FFN_DeepShap
+422,presents,1,3,FFN_DeepShap
+423,reflexology,1,3,FFN_DeepShap
+424,expansion,1,3,FFN_DeepShap
+425,recommande,1,3,FFN_DeepShap
+426,samosa,1,6,FFN_DeepShap
+427,benny,1,4,FFN_DeepShap
+428,prefect,1,4,"FFN_DeepShap, SVM"
+429,kielbasa,1,3,FFN_DeepShap
+430,trufusion,1,5,FFN_DeepShap
+431,mouse,1,3,FFN_DeepShap
+432,cibo,1,7,FFN_DeepShap
+433,alice,1,4,FFN_DeepShap
+434,accommodates,1,4,FFN_DeepShap
+435,tjs,1,3,FFN_DeepShap
+436,ms,1,8,FFN_DeepShap
+437,airdrie,1,3,FFN_DeepShap
+438,adobo,1,5,FFN_DeepShap
+439,shannon,1,3,FFN_DeepShap
+440,bien,1,10,FFN_DeepShap
+441,crafted,1,10,FFN_DeepShap
+442,heather,1,6,FFN_DeepShap
+443,shoppe,1,4,FFN_DeepShap
+444,satay,1,3,FFN_DeepShap
+445,grapefruit,1,7,FFN_DeepShap
+446,amber,1,7,FFN_DeepShap
+447,listens,1,6,FFN_DeepShap
+448,wayne,1,5,FFN_DeepShap
+449,mum,1,3,FFN_DeepShap
+450,passionate,1,10,FFN_DeepShap
+451,sopes,1,3,FFN_DeepShap
+452,lavender,1,6,FFN_DeepShap
+453,instructors,1,10,FFN_DeepShap
+454,deliciously,1,9,FFN_DeepShap
+455,emily,1,4,"FFN_DeepShap, SVM"
+456,pepe,1,3,FFN_DeepShap
+457,sage,1,5,FFN_DeepShap
+458,sara,1,3,FFN_DeepShap
+459,tres,1,10,FFN_DeepShap
+460,jeff,1,4,FFN_DeepShap
+461,restoring,1,3,FFN_DeepShap
+462,ideas,1,6,FFN_DeepShap
+463,yorker,1,3,FFN_DeepShap
+464,fabrics,1,3,"FFN_DeepShap, LSTM"
+465,timers,1,4,FFN_DeepShap
+466,raindrop,1,4,"FFN_DeepShap, SVM"
+467,assez,1,3,FFN_DeepShap
+468,jakob,1,3,FFN_DeepShap
+469,zesty,1,3,FFN_DeepShap
+470,crumb,1,3,FFN_DeepShap
+471,appointed,1,4,FFN_DeepShap
+472,harnesses,1,3,FFN_DeepShap
+473,suede,1,3,FFN_DeepShap
+474,gaslamp,1,3,SVM
+475,ferris,1,4,SVM
+476,bahama,1,3,SVM
+477,intuitive,1,5,"SVM, LSTM"
+478,kronos,1,3,SVM
+479,pie,1,99,SVM
+480,petite,1,6,SVM
+481,mystere,1,11,SVM
+482,cristo,1,4,SVM
+483,neat,1,39,SVM
+484,obstacles,1,3,SVM
+485,unassuming,1,4,SVM
+486,rad,1,5,SVM
+487,stainless,1,8,SVM
+488,gyros,1,25,SVM
+489,vaporizer,1,3,SVM
+490,grin,1,5,SVM
+491,chevy,1,7,SVM
+492,collard,1,14,SVM
+493,cpr,1,3,SVM
+494,portable,1,5,SVM
+495,smoothly,1,11,SVM
+496,calmer,1,6,SVM
+497,sleek,1,6,SVM
+498,rooftop,1,9,SVM
+499,stylish,1,8,SVM
+500,orleans,1,10,SVM
+501,portobello,1,3,SVM
+502,ahwatukee,1,7,SVM
+503,smiley,1,6,SVM
+504,straightforward,1,3,"SVM, LSTM"
+505,navigate,1,7,SVM
+506,favourite,1,51,LSTM
+507,athletes,1,4,LSTM
+508,addicted,1,14,LSTM
+509,views,1,19,LSTM
+510,inexpensive,1,32,LSTM
+511,sympathique,1,3,LSTM
+512,bomb.com,1,4,LSTM
+513,choix,1,4,LSTM
+514,extension,1,5,LSTM
+515,delish,1,37,LSTM
+516,bonne,1,3,LSTM
+517,notch,1,83,LSTM
+518,vinyl,1,4,LSTM
+519,affordable,1,98,LSTM
+520,delicious,1,1173,LSTM
+521,assortment,1,10,LSTM
+522,perfect,1,499,LSTM
+523,saki,1,4,LSTM
+524,bologna,1,3,LSTM
+525,impeccable,1,26,LSTM
+526,gem,1,104,LSTM
+527,pleased,1,112,LSTM
+528,deelish,1,3,LSTM
+529,love,1,1562,LSTM
+530,professional,1,268,LSTM
+531,helpful,1,366,LSTM
+532,favorite,1,561,LSTM
+533,readily,1,3,LSTM
+534,library,1,6,LSTM
+535,satisfying,1,37,LSTM
+536,voila,1,3,LSTM
+537,molten,1,3,LSTM
+538,cozy,1,88,LSTM
+539,workmanship,1,5,LSTM
+540,complimentary,1,61,LSTM
+541,efficient,1,92,LSTM
+542,talented,1,23,LSTM
+543,great,1,4074,LSTM
+544,flavorful,1,166,LSTM
+545,best,1,1779,LSTM
+546,authentic,1,178,LSTM
+547,grateful,1,29,LSTM
+548,recommend,1,1124,LSTM
+549,hawaiian,1,24,LSTM
+550,reasonable,1,257,LSTM
+551,friendly,1,1513,LSTM
+552,5/5,1,11,LSTM
+553,bless,1,10,LSTM
+554,considerate,1,3,LSTM
+555,fave,1,27,LSTM
+556,comfy,1,27,LSTM
+557,refreshing,1,50,LSTM
+558,groovy,1,3,LSTM
+559,minimalist,1,4,LSTM
+560,flavourful,1,26,LSTM
+561,perfectly,1,234,LSTM
