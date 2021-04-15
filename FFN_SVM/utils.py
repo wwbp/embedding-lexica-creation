@@ -115,12 +115,6 @@ class NNNet(nn.Module):
         x = self.fc4(x)
         
         return x
-
-class SpacyTokenizer():
-    def __init__(self, tokenizer):
-        self.tokenizer = tokenizer
-
-    
     
     
 ###########################    
@@ -137,6 +131,10 @@ def getLexicon(file=None, df = None):
     
     if 'scores' in lexicon.columns:
         lexicon.rename({'scores':'score'},axis =1, inplace = True)
+    if 'Value' in lexicon.columns:
+        lexicon.rename({'Value':'score'},axis =1, inplace = True)
+    if 'Word' in lexicon.columns:
+        lexicon.rename({'Word':'word'},axis =1, inplace = True)
 
     lexiconWords = set(lexicon.word.values)
 
@@ -351,44 +349,38 @@ def getWordPred_FFN(NNnet, trainDf, nlp, device = 'cuda:0' ):
     return NNwordDf
 
 
-def getWordPred_FFN_PS(NNnet, trainDf, nlp, device):
-    
-    def f(x):
-
+def getWordPred_FFN_PS(NNnet, trainDf, masker, nlp, background, device):
     
     logger.info('Getting word values')
-    explainer = shap.Explainer(f, nlp)
-    shap_values = explainer(trainDf)
+    if masker == "Partition":
+        assert background is not None
+        def f(x):
+            x = torch.tensor(x).to(device)
+            NNnet.to(device)
+            outputs = NNnet(x)[:, -1].detach().cpu().numpy()
+            return outputs
+        explainer = shap.Explainer(f, shap.maskers.Partition(background, 500), algorithm="partition")
+        trainData = generateFastTextData_Spacy(trainDf, nlp)
+        shap_values = explainer(trainData)
+    elif masker == "Text":
+        def f(x):
+            trainData = torch.tensor(generateFastTextData_Spacy(x, nlp)).to(device)
+            NNnet.to(device)
+            outputs = NNnet(trainData)[:, -1].detach().cpu().numpy()
+            return outputs
+    else:
+        logger.error("This masker is not supported!")
 
     word2values = {}
-    exclude = ['[CLS]', '[SEP]', '[PAD]']
-    
-    if args.do_alignment:
-        tokenizer_spacy = spacy.load("fasttext")
 
-    for index_sent, sent in enumerate(data):
-        sent_bert = tokenizer.tokenize(sent)
-        assert len(sent_bert) == len(shap_values.data[index_sent]) - 2
-        if args.do_alignment:
-            sent_spacy = [token.text.lower() for token in tokenizer_spacy(sent)]
-            _, alignment= tokenizations.get_alignments(sent_bert, sent_spacy)
-            for index_word, word in enumerate(sent_spacy):
-                if word not in exclude:
-                    value = 0
-                    for index in alignment[index_word]:
-                        value += shap_values.values[index_sent][index+1]
-                    if value != 0:
-                        if word not in word2values:
-                            word2values[word] = [value/len(alignment[index_word])]
-                        else:
-                            word2values[word].append(value/len(alignment[index_word]))
-        else:
-            for index_word, word in enumerate(sent_bert):
-                if word not in exclude:
-                    if word not in word2values:
-                        word2values[word] = [shap_values.values[index_sent][index_word+1]]
-                    else:
-                        word2values[word].append(shap_values.values[index_sent][index_word+1])
+    for index_sent, sent in enumerate(trainDf.text.values):
+        tokens = [token.text.lower() for token in nlp(sent)]
+        sent_shap = shap_values.values[index_sent].sum()
+        for word in tokens:
+            if word not in word2values:
+                word2values[word] = [sent_shap]
+            else:
+                word2values[word].append(sent_shap)
 
     lexicon = {'Word':[], 'Value': [], 'Freq': []}
     for word in word2values:
@@ -397,24 +389,8 @@ def getWordPred_FFN_PS(NNnet, trainDf, nlp, device):
         lexicon['Freq'].append(len(word2values[word]))
 
     lexicon_df = pd.DataFrame.from_dict(lexicon).sort_values(by='Value')
-
-    if gold is not None:
-        gold = pd.read_csv(gold)
-        gold.dropna()
-        gold.columns = ['Word', 'Score', 'Std']
-        gold = gold[['Word', 'Score']]
-        #gold = gold[['Word', args.task+'.Mean.Sum']]
-        
-        merge_df = pd.merge(lexicon_df, gold, how='inner', on=['Word'])
-        
-        pearson, _ = stats.pearsonr(merge_df['Value'], merge_df['Score'])
-        logger.info("Pearson for word is %f" % pearson)
-
-    output_file = os.path.join(args.output_dir, args.dataset+'_'+args.model_kind+'_'+args.task+'_ps.csv')
-    logger.info('Writing to %s' % output_file)
-    lexicon_df.to_csv(output_file)
     
-    logger.info('Done!')
+    return lexicon_df
 
     
 def trainFFN(trainData, testData, max_epochs = 5, batchSize = 5, device='cuda:0'):
@@ -471,17 +447,20 @@ def trainFFN(trainData, testData, max_epochs = 5, batchSize = 5, device='cuda:0'
 
         if tol >= 5:
             break
-        
+
+    logger.info("Model training completed!")
+
     return best_model
     
     
-def generateLexicon_FFN(NNnet, trainDf, nlp, method = 'feature', device = 'cuda:0'):
+def generateLexicon_FFN(NNnet, trainDf, nlp, method = 'feature', masker = None, background=None, device = 'cuda:0'):
     
     if method == 'feature':
         wordPred = getWordPred_FFN(NNnet, trainDf, nlp, device)
 
     elif method == 'partition':
-        wordPred = getWordPred_FFN_PS(NNnet, trainDf, nlp, device)
+        assert masker is not None
+        wordPred = getWordPred_FFN_PS(NNnet, trainDf, masker, nlp, background, device)
     
     return wordPred
 

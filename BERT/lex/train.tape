@@ -76,10 +76,16 @@ task deep : rg : data
   model=${model//@/$task}
   model=${model//!/$train_batch_size}
 
+  out="/home/zwu49/ztwu/empathy_dictionary/bert-pytorch/lexicon_fast_sum"
+  
+  if [ ! -d $out ]; then
+    mkdir $out
+  fi
+
   CUDA_VISIBLE_DEVICES=`free-gpu` PYTHONPATH=$rg python $rg/scripts/deepshap.py \
     --dataFolder=$data \
     --dataset=$dataset \
-    --output_dir=$rg/lexicon_whole \
+    --output_dir=$out \
     --task=$task \
     --model_kind=$model_kind \
     --model=$model/best_model \
@@ -87,7 +93,7 @@ task deep : rg : data
     --max_seq_length=$max_seq_length \
     --do_lower_case \
     --do_alignment \
-    --background_size=128
+    --background_size=50
 }
 
 plan lex_mask {
@@ -134,6 +140,6 @@ plan lex_deep {
 }
 
 plan debug {
-  reach deep via (dataset: emobank_V) * (task: classification) * (max_seq_length: 128) 
+  reach deep via (dataset: nrc_joy) * (task: classification) * (max_seq_length: 128) 
   * (train_batch_size: 32) * (model_kind: bert)
 }

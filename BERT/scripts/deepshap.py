@@ -11,12 +11,12 @@ import spacy
 import tokenizations
 
 import torch
-from transformers import BertTokenizerFast, DistilBertTokenizerFast
+from transformers import RobertaTokenizerFast, DistilBertTokenizerFast
 
 from utils.preprocess import getData, splitData
 from utils.utils import get_dataset
 from utils.bert_utils import get_word_embeddings
-from models.modeling_bert import BertForSequenceClassification
+from models.modeling_roberta import RobertaForSequenceClassification
 from models.modeling_distilbert import DistilBertForSequenceClassification
 
 
@@ -29,7 +29,9 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("--dataFolder", required=True, type=str, help="The input data dir.")
 parser.add_argument("--dataset", required=True, type=str, help="The dataset we use.")
-parser.add_argument("--output_dir", required=True, type=str, help="The output directory where the model checkpoints will be written.")
+parser.add_argument(
+    "--output_dir", required=True, type=str, 
+    help="The output directory where the model checkpoints will be written.")
 parser.add_argument("--task", required=True, type=str, help="Classification or regression.")
 
 parser.add_argument("--model_kind", required=True, type=str)
@@ -136,7 +138,7 @@ if __name__=="__main__":
            
     #device = torch.device("cpu")
     df = getData(args.dataFolder, args.dataset, args.task)
-    df_background = pd.read_csv("./FFN_DeepShap/backgrounds_500/"+args.dataset+"_500_bg.csv")
+    df_background = pd.read_csv("./FFN_SVM/FFN_Shap/backgrounds_500/"+args.dataset+"_500_bg.csv")
     assert args.background_size <= 500
     background = df_background.text.values[250-int(args.background_size/2):250+int(args.background_size/2)]
     logger.info("Total Data:{}".format(df.shape[0]))
@@ -151,15 +153,16 @@ if __name__=="__main__":
 
     # Load the BERT tokenizer.
     logger.info('Loading BERT tokenizer...')
-    if args.model_kind == 'bert':
+    if args.model_kind == 'roberta':
         try:
-            tokenizer = BertTokenizerFast.from_pretrained(args.tokenizer, do_lower_case=args.do_lower_case)
+            tokenizer = RobertaTokenizerFast.from_pretrained(args.tokenizer, do_lower_case=args.do_lower_case)
         except:
             logger.warning("Tokenizer loading failed")
-        model = BertForSequenceClassification.from_pretrained(args.model).to(device)
+        model = RobertaForSequenceClassification.from_pretrained(args.model).to(device)
     elif args.model_kind == 'distilbert':
         try:
-            tokenizer = DistilBertTokenizerFast.from_pretrained(args.tokenizer, do_lower_case=args.do_lower_case)
+            tokenizer = DistilBertTokenizerFast.from_pretrained(
+                args.tokenizer, do_lower_case=args.do_lower_case)
         except:
             logger.warning("Tokenizer loading failed")
         model = DistilBertForSequenceClassification.from_pretrained(args.model).to(device)
@@ -170,4 +173,5 @@ if __name__=="__main__":
     word_embeddings = get_word_embeddings(model, input_ids, attention_masks, 32, initial=True)
     word_embeddings_bg = get_word_embeddings(model, input_ids_bg, attention_masks_bg, 32, initial=True)
     
-    get_word_rating(model, df_train.text.values, input_ids, word_embeddings, word_embeddings_bg, tokenizer, args.gold_word)
+    get_word_rating(
+        model, df_train.text.values, input_ids, word_embeddings, word_embeddings_bg, tokenizer, args.gold_word)

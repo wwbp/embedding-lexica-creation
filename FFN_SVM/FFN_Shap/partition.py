@@ -22,7 +22,7 @@ torch.manual_seed(42)
 torch.cuda.manual_seed(42)
 
 
-def train_generate(lexiconDataset, nlp):
+def train_generate(lexiconDataset, nlp, masker, background=None):
     logger.info("Start Training {}".format(lexiconDataset))
     trainDf, devDf, _ = splitData(getData(args.dataFolder, lexiconDataset))
     trainData = generateFastTextData_Spacy(trainDf, nlp, textVariable = "text")
@@ -33,9 +33,7 @@ def train_generate(lexiconDataset, nlp):
 
     NNnet = trainFFN(trainDataset, devDataset, max_epochs = 100, device=device)
 
-    lexicon = generateLexicon_FFN(NNnet,trainDf, nlp, 'partition', device=device)
-
-    lexicon.rename({"NNprob":"score"},axis = 1, inplace = True)
+    lexicon = generateLexicon_FFN(NNnet,trainDf, nlp, "partition", masker, background, device=device)
 
     return NNnet, lexicon
 
@@ -47,6 +45,8 @@ if __name__ == "__main__":
 
     parser.add_argument("--dataFolder", required=True, type=str, help="The input data dir.")
     parser.add_argument("--output_dir", required=True, type=str, help="The output directory where the model checkpoints will be written.")
+    parser.add_argument("--masker", required=True, type=str)
+    parser.add_argument("--background_size", default=200, type=int)
 
     args = parser.parse_args()
 
@@ -72,7 +72,16 @@ if __name__ == "__main__":
 
     results = []
     for lexica in lexiconDataset1:
-        NNnet, lexicon = train_generate(lexica, nlp)
+        if args.masker == "Partition":
+            df_background = pd.read_csv("./FFN_SVM/FFN_Shap/backgrounds_500/"+lexica+"_500_bg.csv")
+            assert args.background_size <= 500
+            background = df_background.iloc[250-int(args.background_size/2):250+int(args.background_size/2)]
+            background = generateFastTextData_Spacy(background, nlp)
+        elif args.masker == "Text":
+            background = None
+        else:
+            logger.error("{} is not a supported masker!".format(args.masker))
+        NNnet, lexicon = train_generate(lexica, nlp, args.masker, background)
         outfilename = f"{args.output_dir}/{lexica}_ffn_feature.csv"
         lexicon.to_csv(outfilename, index = False, index_label = False)
 
@@ -82,7 +91,16 @@ if __name__ == "__main__":
             results.append([lexica]+testFFN(NNnet,data,lexiconWords, lexiconMap, nlp, args.dataFolder, device))
 
     for lexica in lexiconDataset2:
-        NNnet, lexicon = train_generate("nrc_"+lexica, nlp)
+        if args.masker == "Partition":
+            df_background = pd.read_csv("./FFN_SVM/FFN_Shap/backgrounds_500/"+"nrc_"+lexica+"_500_bg.csv")
+            assert args.background_size <= 500
+            background = df_background.iloc[250-int(args.background_size/2):250+int(args.background_size/2)]
+            background = generateFastTextData_Spacy(background, nlp)
+        elif args.masker == "Text":
+            background = None
+        else:
+            logger.error("{} is not a supported masker!".format(args.masker))
+        NNnet, lexicon = train_generate("nrc_"+lexica, nlp, args.masker, background)
         outfilename = f"{args.output_dir}/nrc_{lexica}_ffn_feature.csv"
         lexicon.to_csv(outfilename, index = False, index_label = False)
 

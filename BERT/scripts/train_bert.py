@@ -12,12 +12,12 @@ from sklearn.linear_model import LogisticRegression
 import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 
-from transformers import BertTokenizerFast, DistilBertTokenizerFast
+from transformers import RobertaTokenizerFast, DistilBertTokenizerFast
 from transformers import AdamW, get_linear_schedule_with_warmup
 
 from utils.preprocess import getData, splitData, balanceData
 from utils.utils import format_time, prepare_data
-from models.modeling_bert import BertForSequenceClassification
+from models.modeling_roberta import RobertaForSequenceClassification
 from models.modeling_distilbert import DistilBertForSequenceClassification
 
 
@@ -75,8 +75,8 @@ def run_train(device: torch.device, args):
 
     # Load the BERT tokenizer.
     logger.info('Loading BERT tokenizer...')
-    if args.model_kind == "bert":
-        tokenizer = BertTokenizerFast.from_pretrained(args.model, do_lower_case=args.do_lower_case)
+    if args.model_kind == "roberta":
+        tokenizer = RobertaTokenizerFast.from_pretrained(args.model, do_lower_case=args.do_lower_case)
     elif args.model_kind == "distilbert":
         tokenizer = DistilBertTokenizerFast.from_pretrained(args.model, do_lower_case=args.do_lower_case)
     else:
@@ -87,8 +87,8 @@ def run_train(device: torch.device, args):
 
     # Load BertForSequenceClassification, the pretrained BERT model with a single 
     # linear classification layer on top.
-    if args.model_kind == "bert": 
-        model = BertForSequenceClassification.from_pretrained(
+    if args.model_kind == "roberta": 
+        model = RobertaForSequenceClassification.from_pretrained(
             args.model,
             num_labels = 2 if args.task == 'classification' else 1, # Set 1 to do regression.
             output_attentions = False, # Whether the model returns attentions weights.
@@ -384,8 +384,8 @@ def run_predict(device: torch.device, args):
 
     # Load the BERT tokenizer.
     logger.info('Loading BERT tokenizer...')
-    if args.model_kind == "bert":
-        tokenizer = BertTokenizerFast.from_pretrained(args.model, do_lower_case=args.do_lower_case)
+    if args.model_kind == "roberta":
+        tokenizer = RobertaTokenizerFast.from_pretrained(args.model, do_lower_case=args.do_lower_case)
     elif args.model_kind == "distilbert":
         tokenizer = DistilBertTokenizerFast.from_pretrained(args.model, do_lower_case=args.do_lower_case)
     else:
@@ -400,7 +400,7 @@ def run_predict(device: torch.device, args):
     # Load BertForSequenceClassification, the pretrained BERT model with a single 
     # linear classification layer on top.
     if args.model_kind == "bert": 
-        model = BertForSequenceClassification.from_pretrained(
+        model = RobertaForSequenceClassification.from_pretrained(
             args.model,
             num_labels = 2 if args.task == 'classification' else 1, # Set 1 to do regression.
             output_attentions = False, # Whether the model returns attentions weights.

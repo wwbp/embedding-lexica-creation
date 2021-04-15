@@ -11,11 +11,11 @@ import tokenizations
 
 import torch
 from torch.utils.data import DataLoader, SequentialSampler, TensorDataset
-from transformers import BertTokenizerFast, DistilBertTokenizerFast
+from transformers import RobertaTokenizerFast, DistilBertTokenizerFast
 
 from utils.preprocess import getData, splitData
 from utils.utils import get_dataset
-from models.modeling_bert import BertForSequenceClassification
+from models.modeling_roberta import RobertaForSequenceClassification
 from models.modeling_distilbert import DistilBertForSequenceClassification
 
 
@@ -56,7 +56,7 @@ def get_word_rating(model, input_ids, attention_masks, text, tokenizer, gold):
     exclude = ['[CLS]', '[SEP]', '[PAD]']
     
     if args.do_alignment:
-        tokenizer_spacy = spacy.load("/home/zwu49/ztwu/empathy_dictionary/fasttext")
+        tokenizer_spacy = spacy.load("./fasttext")
     
     model.to(device)
         
@@ -197,12 +197,12 @@ if __name__=="__main__":
 
     # Load the BERT tokenizer.
     logger.info('Loading BERT tokenizer...')
-    if args.model_kind == 'bert':
+    if args.model_kind == 'roberta':
         try:
-            tokenizer = BertTokenizerFast.from_pretrained(args.tokenizer, do_lower_case=args.do_lower_case)
+            tokenizer = RobertaTokenizerFast.from_pretrained(args.tokenizer, do_lower_case=args.do_lower_case)
         except:
             logger.warning("Tokenizer loading failed")
-        model = BertForSequenceClassification.from_pretrained(args.model).to(device)
+        model = RobertaForSequenceClassification.from_pretrained(args.model).to(device)
     elif args.model_kind == 'distilbert':
         try:
             tokenizer = DistilBertTokenizerFast.from_pretrained(args.tokenizer, do_lower_case=args.do_lower_case)
