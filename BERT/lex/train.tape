@@ -4,14 +4,14 @@ task mask : rg : data
   :: pyenv=@
   :: .submitter=$grid :: .resource_flags=$gpuResourceFlags :: .action_flags=$gpuResourceFlags
 { 
-  model="/home/zwu49/ztwu/empathy_dictionary/final/trainOnBert/dataset.*+max_seq_length.^+model_kind.#+pretrained.#-base-uncased+task.@+train_batch_size.!"
+  model="/home/zwu49/ztwu/empathy_dictionary/roberta/trainOnBert/dataset.*+max_seq_length.^+model_kind.#+pretrained.#-base+task.@+train_batch_size.!"
   model=${model//\*/$dataset}
   model=${model//^/$max_seq_length}
   model=${model//#/$model_kind}
   model=${model//@/$task}
   model=${model//!/$train_batch_size}
 
-  out="/home/zwu49/ztwu/empathy_dictionary/bert-pytorch/lexicon_fast_sum"
+  out="/home/zwu49/ztwu/empathy_dictionary/bert-pytorch/lexicon_roberta"
   
   if [ ! -d $out ]; then
     mkdir $out
@@ -37,14 +37,14 @@ task ps : rg : data
   :: pyenv=@
   :: .submitter=$grid :: .resource_flags=$gpuResourceFlags :: .action_flags=$gpuResourceFlags
 {
-  model="/home/zwu49/ztwu/empathy_dictionary/final/trainOnBert/dataset.*+max_seq_length.^+model_kind.#+pretrained.#-base-uncased+task.@+train_batch_size.!"
+  model="/home/zwu49/ztwu/empathy_dictionary/roberta/trainOnBert/dataset.*+max_seq_length.^+model_kind.#+pretrained.#-base+task.@+train_batch_size.!"
   model=${model//\*/$dataset}
   model=${model//^/$max_seq_length}
   model=${model//#/$model_kind}
   model=${model//@/$task}
   model=${model//!/$train_batch_size}
 
-  out="/home/zwu49/ztwu/empathy_dictionary/bert-pytorch/lexicon_fast_sum"
+  out="/home/zwu49/ztwu/empathy_dictionary/bert-pytorch/lexicon_roberta"
   
   if [ ! -d $out ]; then
     mkdir $out
@@ -69,7 +69,7 @@ task deep : rg : data
   :: pyenv=@
   :: .submitter=$grid :: .resource_flags=$gpuResourceFlags :: .action_flags=$gpuResourceFlags
 {
-  model="/home/zwu49/ztwu/empathy_dictionary/final/trainOnBert/dataset.*+max_seq_length.^+model_kind.#+pretrained.#-base-uncased+task.@+train_batch_size.!"
+  model="/home/zwu49/ztwu/empathy_dictionary/roberta/trainOnBert/dataset.*+max_seq_length.^+model_kind.#+pretrained.#-base+task.@+train_batch_size.!"
   model=${model//\*/$dataset}
   model=${model//^/$max_seq_length}
   model=${model//#/$model_kind}
@@ -142,4 +142,13 @@ plan lex_deep {
 plan debug {
   reach deep via (dataset: nrc_joy) * (task: classification) * (max_seq_length: 128) 
   * (train_batch_size: 32) * (model_kind: bert)
+}
+
+plan lex_roberta {
+  reach mask via (dataset: nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise empathy amazon_finefood_subset amazon_toys_subset) * (task: classification) 
+  * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: roberta)
+  reach mask via (dataset: yelp_subset) * (task: classification) * (max_seq_length: 200) * (train_batch_size: 16) * (model_kind: roberta)
+  reach ps via (dataset: nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise empathy amazon_finefood_subset amazon_toys_subset) * (task: classification) 
+  * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: roberta)
+  reach ps via (dataset: yelp_subset) * (task: classification) * (max_seq_length: 200) * (train_batch_size: 16) * (model_kind: roberta)
 }

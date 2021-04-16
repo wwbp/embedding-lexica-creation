@@ -1,8 +1,8 @@
 global {
   # Model architecture
   task=(task: regression classification)
-  model_kind=(model_kind: bert distilbert)
-  pretrained=(pretrained: bert-base-uncased distilbert-base-uncased)
+  model_kind=(model_kind: bert distilbert roberta)
+  pretrained=(pretrained: bert-base-uncased distilbert-base-uncased roberta-base)
 
   # training hyper-parameters
   max_seq_length=(max_seq_length: 128 256 512 200)

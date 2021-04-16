@@ -28,9 +28,8 @@ def get_dataset(input, tokenizer, max_seq_length: int,
                 task: str, values: np.ndarray=None) -> Tuple[torch.Tensor]:
     encoded_dict = tokenizer(
         input.tolist(),                      # Sentence to encode.
-        add_special_tokens = True, # Add '[CLS]' and '[SEP]'
         max_length = max_seq_length,    # Pad & truncate all sentences.
-        pad_to_max_length = True, 
+        padding='max_length', 
         return_tensors = 'pt',     # Return pytorch tensors.
         truncation= True,
         )

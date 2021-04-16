@@ -52,22 +52,26 @@ def get_word_rating(data, f, tokenizer, gold=None):
     shap_values = explainer(data)
 
     word2values = {}
-    exclude = ['[CLS]', '[SEP]', '[PAD]']
     
     if args.do_alignment:
         tokenizer_spacy = spacy.load("./fasttext")
 
     for index_sent, sent in enumerate(data):
-        sent_bert = tokenizer.tokenize(sent)
-        assert len(sent_bert) == len(shap_values.data[index_sent]) - 2
+        sent_bert = tokenizer.convert_ids_to_tokens(
+            tokenizer(
+                sent, 
+                max_length=args.max_seq_length, 
+                padding='max_length', 
+                return_tensors = 'pt',
+                truncation= True,)["input_ids"])
         if args.do_alignment:
             sent_spacy = [token.text.lower() for token in tokenizer_spacy(sent)]
             _, alignment= tokenizations.get_alignments(sent_bert, sent_spacy)
             for index_word, word in enumerate(sent_spacy):
-                if word not in exclude:
+                if word not in tokenizer.special_tokens_map.values():
                     value = 0
                     for index in alignment[index_word]:
-                        value += shap_values.values[index_sent][index+1]
+                        value += shap_values.values[index_sent][index]
                     if value != 0:
                         if word not in word2values:
                             #word2values[word] = [value/len(alignment[index_word])]
@@ -77,11 +81,11 @@ def get_word_rating(data, f, tokenizer, gold=None):
                             word2values[word].append(value)
         else:
             for index_word, word in enumerate(sent_bert):
-                if word not in exclude:
+                if word not in tokenizer.special_tokens_map.values():
                     if word not in word2values:
-                        word2values[word] = [shap_values.values[index_sent][index_word+1]]
+                        word2values[word] = [shap_values.values[index_sent][index_word]]
                     else:
-                        word2values[word].append(shap_values.values[index_sent][index_word+1])
+                        word2values[word].append(shap_values.values[index_sent][index_word])
 
     lexicon = {'Word':[], 'Value': [], 'Freq': []}
     for word in word2values:
