@@ -53,7 +53,6 @@ def get_word_rating(model, input_ids, attention_masks, text, tokenizer, gold):
     logger.info('Getting lexicon')
     
     word2values = {}
-    exclude = ['[CLS]', '[SEP]', '[PAD]']
     
     if args.do_alignment:
         tokenizer_spacy = spacy.load("./fasttext")
@@ -123,7 +122,7 @@ def get_word_rating(model, input_ids, attention_masks, text, tokenizer, gold):
             sent_spacy = [token.text.lower() for token in tokenizer_spacy(text[i])]
             _, alignment= tokenizations.get_alignments(words, sent_spacy)
             for index_word, word in enumerate(sent_spacy):
-                if word not in exclude:
+                if word not in tokenizer.special_tokens_map.values():
                     word_value = 0
                     for index in alignment[index_word]:
                         try:
@@ -141,7 +140,7 @@ def get_word_rating(model, input_ids, attention_masks, text, tokenizer, gold):
                             word2values[word].append(word_value)
         else:
             for index, word in enumerate(words):
-                if word not in exclude:
+                if word not in tokenizer.special_tokens_map.values():
                     if word not in word2values:
                         word2values[word] = [value[index]]
                     else:

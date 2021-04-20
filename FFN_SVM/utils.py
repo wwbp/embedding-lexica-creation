@@ -71,7 +71,7 @@ def getWordCount(df, nlp):
     word_freq = Counter(wordCount)
     
     df = pd.Series(word_freq).reset_index()
-    df.columns = ['word','wordCount']
+    df.columns = ['Word','Freq']
     
     return df
 
@@ -128,20 +128,13 @@ def getLexicon(file=None, df = None):
         lexicon = pd.read_csv(file)
     else:
         lexicon = df
-    
-    if 'scores' in lexicon.columns:
-        lexicon.rename({'scores':'score'},axis =1, inplace = True)
-    if 'Value' in lexicon.columns:
-        lexicon.rename({'Value':'score'},axis =1, inplace = True)
-    if 'Word' in lexicon.columns:
-        lexicon.rename({'Word':'word'},axis =1, inplace = True)
 
-    lexiconWords = set(lexicon.word.values)
+    lexiconWords = set(lexicon.Word.values)
 
     lexiconMap = {}
 
     for i in range(len(lexicon)):
-        lexiconMap[lexicon.iloc[i]['word']] = lexicon.iloc[i]['score']
+        lexiconMap[lexicon.iloc[i]['Word']] = lexicon.iloc[i]['Value']
         
     return lexiconWords, lexiconMap
 
@@ -341,9 +334,9 @@ def getWordPred_FFN(NNnet, trainDf, nlp, device = 'cuda:0' ):
     wordPred = NNnet(torch.from_numpy(embData).to(device))
 
     NNwordPred = wordPred.detach().cpu().numpy()[:,1]
-    NNwordDf = pd.DataFrame({'word':wordList,'NNprob':NNwordPred})
-    NNwordDf = NNwordDf.merge(wordCount, on='word')
-    NNwordDf = NNwordDf.sort_values('NNprob',ascending = False)
+    NNwordDf = pd.DataFrame({'Word':wordList,'Value':NNwordPred})
+    NNwordDf = NNwordDf.merge(wordCount, on='Word')
+    NNwordDf = NNwordDf.sort_values('Value',ascending = False)
     NNwordDf['NN_Rank'] = list(range(len(NNwordDf)))
     
     return NNwordDf

@@ -67,7 +67,6 @@ def get_word_rating(model, text, input_ids, word_embeddings, background, tokeniz
     logging.info("Calculated done!")
     
     word2values = {}
-    exclude = ['[CLS]', '[SEP]', '[PAD]']
     
     if args.do_alignment:
         logger.info(os.getcwd())
@@ -79,7 +78,7 @@ def get_word_rating(model, text, input_ids, word_embeddings, background, tokeniz
             sent_spacy = [token.text.lower() for token in tokenizer_spacy(sent)]
             _, alignment= tokenizations.get_alignments(sent_bert, sent_spacy)
             for index_word, word in enumerate(sent_spacy):
-                if word not in exclude:
+                if word not in tokenizer.special_tokens_map.values():
                     value = 0
                     for index in alignment[index_word]:
                         value += shap_values[index_sent][index]
@@ -90,7 +89,7 @@ def get_word_rating(model, text, input_ids, word_embeddings, background, tokeniz
                             word2values[word].append(value/len(alignment[index_word]))
         else:
             for index, word in enumerate(sent_bert):
-                if word not in exclude:
+                if word not in tokenizer.special_tokens_map.values():
                     if word not in word2values:
                         word2values[word] = [shap_values[index_sent][index]]
                     else:

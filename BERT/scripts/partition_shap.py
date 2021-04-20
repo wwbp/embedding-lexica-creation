@@ -63,7 +63,7 @@ def get_word_rating(data, f, tokenizer, gold=None):
                 max_length=args.max_seq_length, 
                 padding='max_length', 
                 return_tensors = 'pt',
-                truncation= True,)["input_ids"])
+                truncation= True,)["input_ids"][0])
         if args.do_alignment:
             sent_spacy = [token.text.lower() for token in tokenizer_spacy(sent)]
             _, alignment= tokenizations.get_alignments(sent_bert, sent_spacy)
