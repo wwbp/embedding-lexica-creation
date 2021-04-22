@@ -345,6 +345,17 @@ def getWordPred_FFN(NNnet, trainDf, nlp, device = 'cuda:0' ):
 def getWordPred_FFN_PS(NNnet, trainDf, masker, nlp, background, device):
     
     logger.info('Getting word values')
+    wordCount = getWordCount(trainDf, nlp)
+    wordList = list(wordCount.word)
+
+    embList = []
+    for word in wordList:
+        
+        with nlp.disable_pipes():
+            emb = nlp(word.lower()).vector.reshape(1,-1)
+            embList.append(emb)
+
+    embData = np.concatenate(embList,0)
     if masker == "Partition":
         assert background is not None
         def f(x):
@@ -353,8 +364,7 @@ def getWordPred_FFN_PS(NNnet, trainDf, masker, nlp, background, device):
             outputs = NNnet(x)[:, -1].detach().cpu().numpy()
             return outputs
         explainer = shap.Explainer(f, shap.maskers.Partition(background, 500), algorithm="partition")
-        trainData = generateFastTextData_Spacy(trainDf, nlp)
-        shap_values = explainer(trainData)
+        shap_values = explainer(embData)
     elif masker == "Text":
         def f(x):
             trainData = torch.tensor(generateFastTextData_Spacy(x, nlp)).to(device)
@@ -364,26 +374,35 @@ def getWordPred_FFN_PS(NNnet, trainDf, masker, nlp, background, device):
     else:
         logger.error("This masker is not supported!")
 
-    word2values = {}
-
-    for index_sent, sent in enumerate(trainDf.text.values):
-        tokens = [token.text.lower() for token in nlp(sent)]
-        sent_shap = shap_values.values[index_sent].sum()
-        for word in tokens:
-            if word not in word2values:
-                word2values[word] = [sent_shap]
-            else:
-                word2values[word].append(sent_shap)
-
-    lexicon = {'Word':[], 'Value': [], 'Freq': []}
-    for word in word2values:
-        lexicon['Word'].append(word)
-        lexicon['Value'].append(np.mean(word2values[word]))
-        lexicon['Freq'].append(len(word2values[word]))
-
-    lexicon_df = pd.DataFrame.from_dict(lexicon).sort_values(by='Value')
+    lexicon = pd.DataFrame({'Word':wordList,'Value':shap_values.values().sum(axis=1)})
+    lexicon = lexicon.merge(wordCount, on="Word")
+    lexicon = lexicon.sort_values('Value',ascending = False)
     
-    return lexicon_df
+    return lexicon
+
+
+def getWordPred_FFN_Deep(NNnet, trainDf, nlp, background, device):
+    logger.info('Getting word values')
+    wordCount = getWordCount(trainDf, nlp)
+    wordList = list(wordCount.word)
+
+    embList = []
+    for word in wordList:
+        
+        with nlp.disable_pipes():
+            emb = nlp(word.lower()).vector.reshape(1,-1)
+            embList.append(emb)
+    
+    embData = np.concatenate(embList,0)
+
+    explainer = shap.DeepExplainer(NNnet, background)
+    shap_values = explainer(embData)[1]
+
+    lexicon = pd.DataFrame({'Word':wordList,'Value':shap_values.sum(axis=1)})
+    lexicon = lexicon.merge(wordCount, on="Word")
+    lexicon = lexicon.sort_values('Value',ascending = False)
+    
+    return lexicon 
 
     
 def trainFFN(trainData, testData, max_epochs = 5, batchSize = 5, device='cuda:0'):
@@ -448,12 +467,15 @@ def trainFFN(trainData, testData, max_epochs = 5, batchSize = 5, device='cuda:0'
     
 def generateLexicon_FFN(NNnet, trainDf, nlp, method = 'feature', masker = None, background=None, device = 'cuda:0'):
     
-    if method == 'feature':
+    if method == "feature":
         wordPred = getWordPred_FFN(NNnet, trainDf, nlp, device)
 
-    elif method == 'partition':
+    elif method == "partition":
         assert masker is not None
         wordPred = getWordPred_FFN_PS(NNnet, trainDf, masker, nlp, background, device)
+    
+    elif method == "deep":
+        wordPred = getWordPred_FFN_Deep(NNnet, trainDf, nlp, background, device)
     
     return wordPred
 

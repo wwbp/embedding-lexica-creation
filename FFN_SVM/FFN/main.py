@@ -12,6 +12,8 @@ import spacy
 from utils import generateFastTextData_Spacy, Dataset, trainFFN
 from preprocessing.preprocess import getData, splitData
 from generation.feature import feature
+from generation.partition import partition
+from generation.deep import deep
 
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(name)s - %(message)s", datefmt="%m/%d/%Y %H:%M:%S",
@@ -38,7 +40,7 @@ def parse():
     parser.add_argument(
         "--method", type=str, help="Choose the method for lexicon generation."
     )
-    parser.add_argument("--model", type=str, help="The dir to the FFN model.")
+    parser.add_argument("--model_dir", type=str, help="The dir to the FFN model.")
     parser.add_argument("--masker", type=str, help="The masker used by partition shap.")
     parser.add_argument(
         "--background_size", default=200, type=int, help="Background size for Partition Masker and DeepShap.")
@@ -107,22 +109,21 @@ def main()-> None:
             for data in train_data1:
                 results += feature(data, test_data1, nlp, args, device)
             for data in train_data2:
-                results += feature("nrc_"+data, [i+"_"+data for i in test_data2], nlp, args, device)
+                results += feature(
+                    "nrc_"+data, [i+"_"+data for i in test_data2], nlp, args, device)
         elif args.method == "deep":
-            deep_shap()
+            for data in train_data1:
+                results += deep(data, test_data1, nlp, args, device)
+            for data in train_data2:
+                results += deep(
+                    "nrc_"+data, [i+"_"+data for i in test_data2], nlp, args, device)
         elif args.method == "partition":
             assert args.masker is not None
-            if args.masker == "Partition":
-                df_background = pd.read_csv("./FFN_SVM/FFN_Shap/backgrounds_500/"+lexica+"_500_bg.csv")
-                assert args.background_size <= 500
-                background = df_background.iloc[250-int(args.background_size/2):250+int(args.background_size/2)]
-                background = generateFastTextData_Spacy(background, nlp)
-            elif args.masker == "Text":
-                background = None
-            else:
-                logger.error("{} is not a supported masker!".format(args.masker))
             for data in train_data1:
-                partition_shap(data, test_data1, nlp, args, device, background)
+                results += partition(data, test_data1, nlp, args, device)
+            for data in train_data2:
+                results += partition(
+                    "nrc_"+data, [i+"_"+data for i in test_data2], nlp, args, device)
         else:
             logger.error("{} is not a valid method!".format(args.method))
         

@@ -16,7 +16,7 @@ def feature(train:str, test:List[str], nlp, args, device)->List[List[Union[str, 
     logger.info("Generating lexicon for {}".format(train))
     result = []
 
-    NNnet = NNnet().load_state_dict(torch.load(args.model))
+    NNnet = NNnet().load_state_dict(torch.load(args.model+train+".bin"))
     trainDf, devDf, _ = splitData(getData(args.dataFolder, train))
     
     lexicon = generateLexicon_FFN(NNnet,trainDf,nlp,args.method,device=device)
