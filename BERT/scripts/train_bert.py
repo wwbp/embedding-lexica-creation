@@ -399,7 +399,7 @@ def run_predict(device: torch.device, args):
     
     # Load BertForSequenceClassification, the pretrained BERT model with a single 
     # linear classification layer on top.
-    if args.model_kind == "bert": 
+    if args.model_kind == "roberta": 
         model = RobertaForSequenceClassification.from_pretrained(
             args.model,
             num_labels = 2 if args.task == 'classification' else 1, # Set 1 to do regression.

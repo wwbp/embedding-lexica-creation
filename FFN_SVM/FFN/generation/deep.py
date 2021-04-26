@@ -4,7 +4,7 @@ import pandas as pd
 
 import torch
 
-from utils import NNnet, generateLexicon_FFN, getLexicon, testFFN, generateFastTextData_Spacy
+from utils import NNNet, generateLexicon_FFN, getLexicon, testFFN, generateFastTextData_Spacy
 from preprocessing.preprocess import getData, splitData
 
 
@@ -19,15 +19,16 @@ def deep(
     df_background = pd.read_csv("./FFN_SVM/FFN/backgrounds_500/"+train+"_500_bg.csv")
     assert args.background_size <= 500
     background = df_background.iloc[250-int(args.background_size/2):250+int(args.background_size/2)]
-    background = generateFastTextData_Spacy(background, nlp)
+    background = torch.tensor(generateFastTextData_Spacy(background, nlp))
     
     result = []
 
-    NNnet = NNnet().load_state_dict(torch.load(args.model+train+".bin"))
+    NNnet = NNNet()
+    NNnet.load_state_dict(torch.load(args.model_dir+"/"+train+".bin"))
     trainDf, devDf, _ = splitData(getData(args.dataFolder, train))
     
     lexicon = generateLexicon_FFN(NNnet,trainDf,nlp,args.method,background=background,device=device)
-    outfilename = f"{args.output_dir}/{train}_ffn_ps.csv"
+    outfilename = f"{args.output_dir}/{train}_ffn_deep.csv"
     lexicon.to_csv(outfilename, index = False, index_label = False)
     lexiconWords, lexiconMap = getLexicon(df = lexicon)
     

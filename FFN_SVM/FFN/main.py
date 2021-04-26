@@ -43,7 +43,7 @@ def parse():
     parser.add_argument("--model_dir", type=str, help="The dir to the FFN model.")
     parser.add_argument("--masker", type=str, help="The masker used by partition shap.")
     parser.add_argument(
-        "--background_size", default=200, type=int, help="Background size for Partition Masker and DeepShap.")
+        "--background_size", default=100, type=int, help="Background size for Partition Masker and DeepShap.")
 
     args = parser.parse_args()
 
@@ -97,12 +97,12 @@ def main()-> None:
 
     if args.task == "train":
         for data in train_data1:
-            train(train_data1, nlp, args, device)
+            train(data, nlp, args, device)
         for data in train_data2:
             train("nrc_"+data, nlp, args, device)
     elif args.task == "generate":
         assert args.method is not None
-        assert args.model is not None
+        assert args.model_dir is not None
         
         results = []
         if args.method == "feature":

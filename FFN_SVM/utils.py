@@ -278,6 +278,7 @@ def testSVM( model, dataset, lexiconWords, lexiconMap, nlp, dataFolder, train = 
 
 def testModel_FFN(net, testLoader, returnScore = False, device='cuda:0'):
     net.eval()
+    net.to(device)
 
     preds = []
     targets = []
@@ -317,7 +318,7 @@ def getWordPred_FFN(NNnet, trainDf, nlp, device = 'cuda:0' ):
     data = trainDf
         
     wordCount = getWordCount(data, nlp)
-    wordList = list(wordCount.word)
+    wordList = list(wordCount["Word"])
     
     embList = []
     for word in wordList:
@@ -346,7 +347,7 @@ def getWordPred_FFN_PS(NNnet, trainDf, masker, nlp, background, device):
     
     logger.info('Getting word values')
     wordCount = getWordCount(trainDf, nlp)
-    wordList = list(wordCount.word)
+    wordList = list(wordCount['Word'])
 
     embList = []
     for word in wordList:
@@ -356,7 +357,7 @@ def getWordPred_FFN_PS(NNnet, trainDf, masker, nlp, background, device):
             embList.append(emb)
 
     embData = np.concatenate(embList,0)
-    if masker == "Partition":
+    if masker == "partition":
         assert background is not None
         def f(x):
             x = torch.tensor(x).to(device)
@@ -365,7 +366,7 @@ def getWordPred_FFN_PS(NNnet, trainDf, masker, nlp, background, device):
             return outputs
         explainer = shap.Explainer(f, shap.maskers.Partition(background, 500), algorithm="partition")
         shap_values = explainer(embData)
-    elif masker == "Text":
+    elif masker == "text":
         def f(x):
             trainData = torch.tensor(generateFastTextData_Spacy(x, nlp)).to(device)
             NNnet.to(device)
@@ -374,7 +375,7 @@ def getWordPred_FFN_PS(NNnet, trainDf, masker, nlp, background, device):
     else:
         logger.error("This masker is not supported!")
 
-    lexicon = pd.DataFrame({'Word':wordList,'Value':shap_values.values().sum(axis=1)})
+    lexicon = pd.DataFrame({'Word':wordList,'Value':shap_values.values.sum(axis=1)})
     lexicon = lexicon.merge(wordCount, on="Word")
     lexicon = lexicon.sort_values('Value',ascending = False)
     
@@ -384,7 +385,7 @@ def getWordPred_FFN_PS(NNnet, trainDf, masker, nlp, background, device):
 def getWordPred_FFN_Deep(NNnet, trainDf, nlp, background, device):
     logger.info('Getting word values')
     wordCount = getWordCount(trainDf, nlp)
-    wordList = list(wordCount.word)
+    wordList = list(wordCount['Word'])
 
     embList = []
     for word in wordList:
@@ -393,10 +394,12 @@ def getWordPred_FFN_Deep(NNnet, trainDf, nlp, background, device):
             emb = nlp(word.lower()).vector.reshape(1,-1)
             embList.append(emb)
     
-    embData = np.concatenate(embList,0)
+    embData = torch.tensor(np.concatenate(embList,0)).to(device)
 
+    NNnet = NNnet.to(device)
+    background = background.to(device)
     explainer = shap.DeepExplainer(NNnet, background)
-    shap_values = explainer(embData)[1]
+    shap_values=explainer.shap_values(embData)[1]
 
     lexicon = pd.DataFrame({'Word':wordList,'Value':shap_values.sum(axis=1)})
     lexicon = lexicon.merge(wordCount, on="Word")
