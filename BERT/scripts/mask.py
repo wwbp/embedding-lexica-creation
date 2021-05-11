@@ -122,22 +122,21 @@ def get_word_rating(model, input_ids, attention_masks, text, tokenizer, gold):
             sent_spacy = [token.text.lower() for token in tokenizer_spacy(text[i])]
             _, alignment= tokenizations.get_alignments(words, sent_spacy)
             for index_word, word in enumerate(sent_spacy):
-                if word not in tokenizer.special_tokens_map.values():
-                    word_value = 0
-                    for index in alignment[index_word]:
-                        try:
-                            word_value += value[index]
-                        except IndexError:
-                            logger.info(words)
-                            logger.info(sent_spacy)
-                            logger.info(alignment)
-                    if word_value != 0:
-                        if word not in word2values:
-                            #word2values[word] = [word_value/len(alignment[index_word])]
-                            word2values[word] = [word_value]
-                        else:
-                            #word2values[word].append(word_value/len(alignment[index_word]))
-                            word2values[word].append(word_value)
+                word_value = 0
+                for index in alignment[index_word]:
+                    try:
+                        word_value += value[index]
+                    except IndexError:
+                        logger.info(words)
+                        logger.info(sent_spacy)
+                        logger.info(alignment)
+                if word_value != 0:
+                    if word not in word2values:
+                        #word2values[word] = [word_value/len(alignment[index_word])]
+                        word2values[word] = [word_value]
+                    else:
+                        #word2values[word].append(word_value/len(alignment[index_word]))
+                        word2values[word].append(word_value)
         else:
             for index, word in enumerate(words):
                 if word not in tokenizer.special_tokens_map.values():

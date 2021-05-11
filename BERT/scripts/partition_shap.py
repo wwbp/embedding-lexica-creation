@@ -68,17 +68,16 @@ def get_word_rating(data, f, tokenizer, gold=None):
             sent_spacy = [token.text.lower() for token in tokenizer_spacy(sent)]
             _, alignment= tokenizations.get_alignments(sent_bert, sent_spacy)
             for index_word, word in enumerate(sent_spacy):
-                if word not in tokenizer.special_tokens_map.values():
-                    value = 0
-                    for index in alignment[index_word]:
-                        value += shap_values.values[index_sent][index]
-                    if value != 0:
-                        if word not in word2values:
-                            #word2values[word] = [value/len(alignment[index_word])]
-                            word2values[word] = [value]
-                        else:
-                            #word2values[word].append(value/len(alignment[index_word]))
-                            word2values[word].append(value)
+                value = 0
+                for index in alignment[index_word]:
+                    value += shap_values.values[index_sent][index]
+                if value != 0:
+                    if word not in word2values:
+                        #word2values[word] = [value/len(alignment[index_word])]
+                        word2values[word] = [value]
+                    else:
+                        #word2values[word].append(value/len(alignment[index_word]))
+                        word2values[word].append(value)
         else:
             for index_word, word in enumerate(sent_bert):
                 if word not in tokenizer.special_tokens_map.values():

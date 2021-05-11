@@ -44,7 +44,7 @@ task evalOnBert : rg : data
     --do_lower_case \
     --max_seq_length=$max_seq_length \
     --predict_batch_size=$train_batch_size \
-    
+    --test_set
 }
 
 plan PilotOnBert {
@@ -164,4 +164,16 @@ plan RobertaEvalOther {
   * (max_seq_length: 128) * (train_batch_size: 32)
   reach evalOnBert via (train_data: yelp_subset) * (dataset: song_joy emobank_V dialog_joy friends_joy) 
   * (task: classification) * (model_kind: roberta) * (max_seq_length: 200) * (train_batch_size: 16)
+}
+
+plan Yelp_small {
+  reach trainOnBert via (dataset: yelp_subset) * (task: classification) * (max_seq_length: 128) 
+  * (train_batch_size: 32) * (model_kind: roberta) * (pretrained: roberta-base)
+  reach trainOnBert via (dataset: yelp_subset) * (task: classification) * (max_seq_length: 128) 
+  * (train_batch_size: 32) * (model_kind: distilbert) * (pretrained: distilbert-base-uncased)
+}
+
+plan yelp_eval {
+  reach evalOnBert via (train_data: yelp_subset) * (dataset: nrc_joy empathy yelp_subset amazon_finefood_subset amazon_toys_subset) * (task: classification) * (model_kind: roberta)
+  * (max_seq_length: 128) * (train_batch_size: 32)
 }
