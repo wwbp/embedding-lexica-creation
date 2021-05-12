@@ -27,7 +27,7 @@ task evalOnBert : rg : data
   :: pyenv=@
   :: .submitter=$grid :: .resource_flags=$gpuResourceFlags :: .action_flags=$gpuResourceFlags
 {
-  model="/home/zwu49/ztwu/empathy_dictionary/roberta/trainOnBert/dataset.*+max_seq_length.^+model_kind.#+pretrained.#-base+task.@+train_batch_size.!"
+  model="/home/zwu49/ztwu/empathy_dictionary/roberta/trainOnBert/dataset.*+max_seq_length.^+model_kind.#+pretrained.#-base-uncased+task.@+train_batch_size.!"
   model=${model//\*/$train_data}
   model=${model//^/$max_seq_length}
   model=${model//#/$model_kind}
@@ -174,6 +174,11 @@ plan Yelp_small {
 }
 
 plan yelp_eval {
-  reach evalOnBert via (train_data: yelp_subset) * (dataset: nrc_joy empathy yelp_subset amazon_finefood_subset amazon_toys_subset) * (task: classification) * (model_kind: roberta)
+  reach evalOnBert via (train_data: yelp_subset) * (dataset: nrc_joy empathy yelp_subset amazon_finefood_subset amazon_toys_subset) * (task: classification) * (model_kind: distilbert)
   * (max_seq_length: 128) * (train_batch_size: 32)
+}
+
+plan yelp_eval_other {
+  reach evalOnBert via (train_data: yelp_subset) * (dataset: song_joy emobank_V dialog_joy friends_joy) 
+  * (task: classification) * (model_kind: distilbert) * (max_seq_length: 128) * (train_batch_size: 32)
 }
