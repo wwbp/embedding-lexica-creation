@@ -4,7 +4,7 @@ export PYTHONPATH=$PYTHONPATH:$(pwd)/FFN_SVM/FFN
 
 TASK = $1
 if [ $TASK = "train" ]; then 
-    python FFN_SVM/SVM/main.py \
+    python FFN_SVM/FFN/main.py \
         --dataFolder=data \
         --output_dir=FFN_model \
         --task=train

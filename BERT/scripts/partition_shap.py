@@ -70,7 +70,10 @@ def get_word_rating(data, f, tokenizer, gold=None):
             for index_word, word in enumerate(sent_spacy):
                 value = 0
                 for index in alignment[index_word]:
-                    value += shap_values.values[index_sent][index]
+                    try:
+                        value += shap_values.values[index_sent][index]
+                    except:
+                        continue
                 if value != 0:
                     if word not in word2values:
                         #word2values[word] = [value/len(alignment[index_word])]

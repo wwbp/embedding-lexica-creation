@@ -4,7 +4,7 @@ task mask : rg : data
   :: pyenv=@
   :: .submitter=$grid :: .resource_flags=$gpuResourceFlags :: .action_flags=$gpuResourceFlags
 { 
-  model="/home/zwu49/ztwu/empathy_dictionary/roberta/trainOnBert/dataset.*+max_seq_length.^+model_kind.#+pretrained.#-base-uncased+task.@+train_batch_size.!"
+  model="/home/zwu49/ztwu/empathy_dictionary/new_nrc/trainOnBert/dataset.*+max_seq_length.^+model_kind.#+pretrained.#-base+task.@+train_batch_size.!"
   model=${model//\*/$dataset}
   model=${model//^/$max_seq_length}
   model=${model//#/$model_kind}
@@ -37,7 +37,7 @@ task ps : rg : data
   :: pyenv=@
   :: .submitter=$grid :: .resource_flags=$gpuResourceFlags :: .action_flags=$gpuResourceFlags
 {
-  model="/home/zwu49/ztwu/empathy_dictionary/roberta/trainOnBert/dataset.*+max_seq_length.^+model_kind.#+pretrained.#-base-uncased+task.@+train_batch_size.!"
+  model="/home/zwu49/ztwu/empathy_dictionary/new_nrc/trainOnBert/dataset.*+max_seq_length.^+model_kind.#+pretrained.#-base-uncased+task.@+train_batch_size.!"
   model=${model//\*/$dataset}
   model=${model//^/$max_seq_length}
   model=${model//#/$model_kind}
@@ -140,8 +140,8 @@ plan lex_deep {
 }
 
 plan debug {
-  reach deep via (dataset: nrc_joy) * (task: classification) * (max_seq_length: 128) 
-  * (train_batch_size: 32) * (model_kind: bert)
+  reach ps via (dataset: nrc_surprise) * (task: classification) * (max_seq_length: 128) 
+  * (train_batch_size: 32) * (model_kind: distilbert)
 }
 
 plan lex_roberta {
@@ -162,4 +162,11 @@ plan lex_roberta_ps {
 plan lex_yelp {
   reach ps via (dataset: yelp_subset) * (task: classification) * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: distilbert)
   reach mask via (dataset: yelp_subset) * (task: classification) * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: distilbert)
+}
+
+plan lex_nrc {
+  reach ps via (dataset: nrc_anger nrc_fear) * (task: classification) 
+  * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: distilbert)
+  #reach mask via (dataset: nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise) * (task: classification) 
+  #* (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: roberta)
 }

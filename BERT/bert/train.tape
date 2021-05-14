@@ -182,3 +182,10 @@ plan yelp_eval_other {
   reach evalOnBert via (train_data: yelp_subset) * (dataset: song_joy emobank_V dialog_joy friends_joy) 
   * (task: classification) * (model_kind: distilbert) * (max_seq_length: 128) * (train_batch_size: 32)
 }
+
+plan new_nrc {
+  reach trainOnBert via (dataset: nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise) * (task: classification) 
+  * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: distilbert) * (pretrained: distilbert-base-uncased)
+  reach trainOnBert via (dataset: nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise) * (task: classification) 
+  * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: roberta) * (pretrained: roberta-base)
+}

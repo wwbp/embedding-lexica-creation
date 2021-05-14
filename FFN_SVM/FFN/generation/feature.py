@@ -1,5 +1,8 @@
 import logging
 from typing import *
+import os
+
+import pandas as pd
 
 import torch
 
@@ -19,9 +22,14 @@ def feature(train:str, test:List[str], nlp, args, device)->List[List[Union[str, 
     NNnet = NNNet()
     NNnet.load_state_dict(torch.load(args.model_dir+"/"+train+".bin"))
     trainDf, devDf, _ = splitData(getData(args.dataFolder, train))
-    lexicon = generateLexicon_FFN(NNnet,trainDf,nlp,args.method,device=device)
     outfilename = f"{args.output_dir}/{train}_ffn_feature.csv"
-    lexicon.to_csv(outfilename, index = False, index_label = False)
+    
+    if os.path.exists(outfilename):
+        logger.info("File already exists, skipped!")
+        lexicon = pd.read_csv(outfilename)
+    else:
+        lexicon = generateLexicon_FFN(NNnet,trainDf,nlp,args.method,device=device)
+        lexicon.to_csv(outfilename, index = False, index_label = False)
     lexiconWords, lexiconMap = getLexicon(df = lexicon)
     
     logger.info("Running evaluation.")

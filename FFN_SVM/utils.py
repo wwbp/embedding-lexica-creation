@@ -203,7 +203,7 @@ def getWordPred_SVM(model, trainDf, nlp ):
         
     ## Getting the word count of all words
     wordCount = getWordCount(data, nlp)
-    wordList = list(wordCount.word)
+    wordList = list(wordCount.Word)
     
     ## Generating the embeddings for all words in the data
     embList = []
@@ -218,9 +218,9 @@ def getWordPred_SVM(model, trainDf, nlp ):
     ## Scoring all words using the SVM model
     svmScores = model.decision_function(embData)
 
-    wordDf = pd.DataFrame({'word':wordList,'score':svmScores})
-    wordDf = wordDf.merge(wordCount, on='word')
-    wordDf = wordDf.sort_values('score',ascending = False)
+    wordDf = pd.DataFrame({'Word':wordList,'Value':svmScores})
+    wordDf = wordDf.merge(wordCount, on='Word')
+    wordDf = wordDf.sort_values('Value',ascending = False)
     wordDf['SVM_Rank'] = list(range(len(wordDf)))
    
     return wordDf
