@@ -27,7 +27,7 @@ task evalOnBert : rg : data
   :: pyenv=@
   :: .submitter=$grid :: .resource_flags=$gpuResourceFlags :: .action_flags=$gpuResourceFlags
 {
-  model="/home/zwu49/ztwu/empathy_dictionary/roberta/trainOnBert/dataset.*+max_seq_length.^+model_kind.#+pretrained.#-base-uncased+task.@+train_batch_size.!"
+  model="/home/zwu49/ztwu/empathy_dictionary/final_models/trainOnBert/dataset.*+max_seq_length.^+model_kind.#+pretrained.#-base+task.@+train_batch_size.!"
   model=${model//\*/$train_data}
   model=${model//^/$max_seq_length}
   model=${model//#/$model_kind}
@@ -188,4 +188,32 @@ plan new_nrc {
   * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: distilbert) * (pretrained: distilbert-base-uncased)
   reach trainOnBert via (dataset: nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise) * (task: classification) 
   * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: roberta) * (pretrained: roberta-base)
+}
+
+plan nrc_eval {
+  reach evalOnBert via (train_data: nrc_joy) * (dataset: nrc_joy empathy yelp_subset amazon_finefood_subset amazon_toys_subset) * (task: classification) * (model_kind: roberta)
+  * (max_seq_length: 128) * (train_batch_size: 32)
+  reach evalOnBert via (train_data: nrc_anger) * (dataset: nrc_anger) * (task: classification) * (model_kind: roberta)
+  * (max_seq_length: 128) * (train_batch_size: 32)
+  reach evalOnBert via (train_data: nrc_sadness) * (dataset: nrc_sadness) * (task: classification) * (model_kind: roberta)
+  * (max_seq_length: 128) * (train_batch_size: 32)
+  reach evalOnBert via (train_data: nrc_fear) * (dataset: nrc_fear) * (task: classification) * (model_kind: roberta)
+  * (max_seq_length: 128) * (train_batch_size: 32)
+  reach evalOnBert via (train_data: nrc_surprise) * (dataset: nrc_surprise) * (task: classification) * (model_kind: roberta)
+  * (max_seq_length: 128) * (train_batch_size: 32)
+  reach evalOnBert via (train_data: yelp_subset amazon_finefood_subset amazon_toys_subset empathy) * (dataset: nrc_joy) * (task: classification) * (model_kind: roberta)
+  * (max_seq_length: 128) * (train_batch_size: 32)
+}
+
+plan nrc_eval_other {
+  reach evalOnBert via (train_data: nrc_joy) * (dataset: song_joy emobank_V dialog_joy friends_joy) 
+  * (task: classification) * (model_kind: roberta) * (max_seq_length: 128) * (train_batch_size: 32)
+  reach evalOnBert via (train_data: nrc_anger) * (dataset: song_anger dialog_anger friends_anger) * (task: classification) * (model_kind: roberta)
+  * (max_seq_length: 128) * (train_batch_size: 32)
+  reach evalOnBert via (train_data: nrc_fear) * (dataset: song_fear dialog_fear friends_fear) * (task: classification) * (model_kind: roberta)
+  * (max_seq_length: 128) * (train_batch_size: 32)
+  reach evalOnBert via (train_data: nrc_sadness) * (dataset: song_sadness dialog_sadness friends_sadness) * (task: classification) * (model_kind: roberta)
+  * (max_seq_length: 128) * (train_batch_size: 32)
+  reach evalOnBert via (train_data: nrc_surprise) * (dataset: song_surprise dialog_surprise friends_surprise) * (task: classification) * (model_kind: roberta)
+  * (max_seq_length: 128) * (train_batch_size: 32)
 }

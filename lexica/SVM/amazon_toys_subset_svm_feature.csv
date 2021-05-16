@@ -1,4 +1,4 @@
-word,score,wordCount,SVM_Rank
+Word,Value,Freq,SVM_Rank
 catan,86.77019607315353,59,0
 settlers,60.929357567345406,60,1
 settler,60.32572337264097,2,2

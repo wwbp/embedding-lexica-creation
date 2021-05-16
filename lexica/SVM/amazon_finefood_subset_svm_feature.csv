@@ -1,4 +1,4 @@
-word,score,wordCount,SVM_Rank
+Word,Value,Freq,SVM_Rank
 igourmet.com,49.82728515484236,5,0
 7-pound,45.098276571474564,1,1
 omega-3s,40.12627406247734,1,2

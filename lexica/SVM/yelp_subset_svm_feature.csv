@@ -1,4 +1,4 @@
-word,score,wordCount,SVM_Rank
+Word,Value,Freq,SVM_Rank
 rollator,55.5544109640901,1,0
 breeze,52.35272532536495,11,1
 bonus-,50.93757616128533,1,2

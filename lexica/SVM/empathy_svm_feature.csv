@@ -1,4 +1,4 @@
-word,score,wordCount,SVM_Rank
+Word,Value,Freq,SVM_Rank
 circuses,42.02384060100978,1,0
 graham,32.56347392501601,1,1
 fernandez,32.26731667989242,2,2
