@@ -1,5 +1,5 @@
 global {
-  ducttape_output="roberta"
+  ducttape_output="dis_results"
   ducttape_experimental_packages=true
   ducttape_experimental_submitters="true"
   ducttape_experimental_imports="true"

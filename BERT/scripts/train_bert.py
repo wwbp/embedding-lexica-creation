@@ -12,13 +12,14 @@ from sklearn.linear_model import LogisticRegression
 import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 
-from transformers import RobertaTokenizerFast, DistilBertTokenizerFast
+from transformers import RobertaTokenizerFast, DistilBertTokenizerFast, BertTokenizerFast
 from transformers import AdamW, get_linear_schedule_with_warmup
 
 from utils.preprocess import getData, splitData, balanceData
 from utils.utils import format_time, prepare_data
 from models.modeling_roberta import RobertaForSequenceClassification
 from models.modeling_distilbert import DistilBertForSequenceClassification
+from models.modeling_bert import BertForSequenceClassification
 
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S',
@@ -49,6 +50,8 @@ def parse():
     parser.add_argument("--train_batch_size", type=int, default=32, help="Total batch size for training.")
     parser.add_argument("--eval_batch_size", type=int, default=8, help="Total batch size for eval.")
     parser.add_argument("--predict_batch_size", type=int, default=8, help="Total batch size for prediction.")
+    parser.add_argument("--use_special_tokens", action="store_true", 
+                        help="whether use the embeddings of the special tokens in the classifier.")
 
     parser.add_argument("--num_train_epochs", type=int, default=5, help="Total number of training epochs to perform.")
     parser.add_argument("--lr", type=float, default=1e-5, help="The initial learning rate for Adam.")
@@ -179,7 +182,8 @@ def run_train(device: torch.device, args):
 
             loss, logits, _ = model(b_input_ids,  
                                     attention_mask=b_input_mask, 
-                                    labels=b_labels)
+                                    labels=b_labels,
+                                    use_special_tokens=args.use_special_tokens)
 
             total_train_loss += loss.item()
             
@@ -246,8 +250,9 @@ def run_train(device: torch.device, args):
 
                 loss, logits, _ = model(b_input_ids, 
                                         attention_mask=b_input_mask,
-                                        labels=b_labels)
-            
+                                        labels=b_labels,
+                                        use_special_tokens=args.use_special_tokens)
+
             # Accumulate the validation loss.
             total_eval_loss += loss.item()
 
@@ -385,9 +390,11 @@ def run_predict(device: torch.device, args):
     # Load the BERT tokenizer.
     logger.info('Loading BERT tokenizer...')
     if args.model_kind == "roberta":
-        tokenizer = RobertaTokenizerFast.from_pretrained(args.model, do_lower_case=args.do_lower_case)
+        tokenizer = RobertaTokenizerFast.from_pretrained(args.model)
     elif args.model_kind == "distilbert":
-        tokenizer = DistilBertTokenizerFast.from_pretrained(args.model, do_lower_case=args.do_lower_case)
+        tokenizer = DistilBertTokenizerFast.from_pretrained(args.model)
+    elif args.model_kind == "bert":
+        tokenizer = BertTokenizerFast.from_pretrained(args.model)
     else:
         logger.error("Model kind not supported!")
     
@@ -413,6 +420,13 @@ def run_predict(device: torch.device, args):
             output_attentions = False, # Whether the model returns attentions weights.
             output_hidden_states = True, # Whether the model returns all hidden-states.
             )
+    elif args.model_kind == "bert":
+        model = BertForSequenceClassification.from_pretrained(
+            args.model,
+            num_labels = 2 if args.task == 'classification' else 1, # Set 1 to do regression.
+            output_attentions = False, # Whether the model returns attentions weights.
+            output_hidden_states = True, # Whether the model returns all hidden-states.
+            )
     
     model.to(device)
     
@@ -433,8 +447,9 @@ def run_predict(device: torch.device, args):
         with torch.no_grad():        
 
             _, logits, _ = model(b_input_ids, 
-                                 attention_mask=b_input_mask,
-                                 labels=b_labels)
+                                attention_mask=b_input_mask,
+                                labels=b_labels,
+                                use_special_tokens=args.use_special_tokens)
 
         if args.task == 'classification':
             logits = torch.softmax(logits, dim=1)[:,1]
