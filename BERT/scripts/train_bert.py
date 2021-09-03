@@ -330,9 +330,6 @@ def run_predict(tokenizer, model, device: torch.device, args):
     # Put model in evaluation mode
     model.eval()
 
-    # Tracking variables 
-    TP = TN = FN = FP = 0
-
     score = []
     label = []
     # Predict 
