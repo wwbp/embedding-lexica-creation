@@ -5,21 +5,19 @@ import time
 
 import random
 import numpy as np
+import pandas as pd
 from scipy import stats
 from sklearn.model_selection import cross_val_score
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, f1_score
 
 import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 
-from transformers import RobertaTokenizerFast, DistilBertTokenizerFast, BertTokenizerFast
-from transformers import AdamW, get_linear_schedule_with_warmup
+from transformers import AdamW, get_scheduler, SchedulerType
 
 from utils.preprocess import getData, splitData, balanceData
 from utils.utils import format_time, prepare_data
-from models.modeling_roberta import RobertaForSequenceClassification
-from models.modeling_distilbert import DistilBertForSequenceClassification
-from models.modeling_bert import BertForSequenceClassification
 
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S',
@@ -55,7 +53,14 @@ def parse():
 
     parser.add_argument("--num_train_epochs", type=int, default=5, help="Total number of training epochs to perform.")
     parser.add_argument("--lr", type=float, default=1e-5, help="The initial learning rate for Adam.")
-    parser.add_argument("--epsilon", type=float, default=1e-8, help="Decay rate for Adam.")
+    parser.add_argument("--weight_decay", type=float, default=0.0, help="Weight decay to use.")
+    parser.add_argument(
+        "--lr_scheduler_type",
+        type=SchedulerType,
+        default="linear",
+        help="The scheduler type to use.",
+        choices=["linear", "cosine", "cosine_with_restarts", "polynomial", "constant", "constant_with_warmup"],
+    )
     parser.add_argument("--num_warmup_steps", type=int, default=0, help="Steps of training to perform linear learning rate warmup for.")
     parser.add_argument("--early_stop", action="store_true", help="Whether set early stopping based on F-score.")
     parser.add_argument("--patience", type=int, default=7, help="patience for early stopping.")
@@ -66,51 +71,31 @@ def parse():
     return args
 
 
-def run_train(device: torch.device, args):
+def run_train(tokenizer, model, device: torch.device, args):
 
-    df = getData(args.dataFolder, args.dataset, args.task)
-    if args.task == "classification":
-        df_train, df_dev, df_test = splitData(df, balanceTrain=True)
-    elif args.task == "regression":
-        df_train, df_dev, df_test = splitData(df, balanceTrain=False)
-    else:
-        logger.warning("Task Type Error!")
-
-    # Load the BERT tokenizer.
-    logger.info('Loading BERT tokenizer...')
-    if args.model_kind == "roberta":
-        tokenizer = RobertaTokenizerFast.from_pretrained(args.model, do_lower_case=args.do_lower_case)
-    elif args.model_kind == "distilbert":
-        tokenizer = DistilBertTokenizerFast.from_pretrained(args.model, do_lower_case=args.do_lower_case)
-    else:
-        logger.error("Model kind not supported!")
+    path = os.path.join(args.dataFolder, args.dataset)
+    df_train = pd.read_csv(os.path.join(path, 'train.csv'))
+    df_dev = pd.read_csv(os.path.join(path, 'dev.csv'))
     
     dataset_train = prepare_data(df_train, tokenizer, args.max_seq_length, args.task)
     dataset_dev = prepare_data(df_dev, tokenizer, args.max_seq_length, args.task)
 
-    # Load BertForSequenceClassification, the pretrained BERT model with a single 
-    # linear classification layer on top.
-    if args.model_kind == "roberta": 
-        model = RobertaForSequenceClassification.from_pretrained(
-            args.model,
-            num_labels = 2 if args.task == 'classification' else 1, # Set 1 to do regression.
-            output_attentions = False, # Whether the model returns attentions weights.
-            output_hidden_states = True, # Whether the model returns all hidden-states.
-            )
-    elif args.model_kind == "distilbert":
-        model = DistilBertForSequenceClassification.from_pretrained(
-            args.model,
-            num_labels = 2 if args.task == 'classification' else 1, # Set 1 to do regression.
-            output_attentions = False, # Whether the model returns attentions weights.
-            output_hidden_states = True, # Whether the model returns all hidden-states.
-            )
-
     model.to(device)
     
-    optimizer = AdamW(model.parameters(),
-                lr = args.lr, # args.learning_rate - default is 5e-5
-                eps = args.epsilon # args.adam_epsilon  - default is 1e-8.
-                )
+    # Optimizer
+    # Split weights in two groups, one with weight decay and the other not.
+    no_decay = ["bias", "LayerNorm.weight"]
+    optimizer_grouped_parameters = [
+        {
+            "params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
+            "weight_decay": args.weight_decay,
+        },
+        {
+            "params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)],
+            "weight_decay": 0.0,
+        },
+    ]
+    optimizer = AdamW(optimizer_grouped_parameters, lr=args.lr)
 
     logger.info('{:>5,} training samples'.format(len(dataset_train)))
     logger.info('{:>5,} validation samples'.format(len(dataset_dev)))
@@ -130,11 +115,15 @@ def run_train(device: torch.device, args):
                 batch_size = args.eval_batch_size # Evaluate with this batch size.
                 )
     
-    total_steps = len(train_dataloader) * args.num_train_epochs
+    total_steps = len(train_dataloader) * 3
     
-    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=args.num_warmup_steps,
-                                                num_training_steps=total_steps)
-    
+    scheduler = get_scheduler(
+        name=args.lr_scheduler_type,
+        optimizer=optimizer,
+        num_warmup_steps=args.num_warmup_steps,
+        num_training_steps=total_steps,
+    )
+
     best_metric = 0
     count_num = 0
     
@@ -211,19 +200,24 @@ def run_train(device: torch.device, args):
         # Calculate the average loss over all of the batches.
         avg_train_loss = total_train_loss / len(train_dataloader)
         
+        prediction_train = np.concatenate(prediction_train)
+        true_values_train = np.concatenate(true_values_train)
+        
+        train_metrics = {}
         # Calculate the Pearson Correlation
         if args.task == 'classification':
-            metric = (np.concatenate(prediction_train).flatten() == np.concatenate(true_values_train)).sum()/df_train.shape[0]
+            train_metrics['acc'] = accuracy_score(true_values_train, prediction_train)
+            train_metrics['f1'] = f1_score(true_values_train, prediction_train)
         else:
-            metric, _ = stats.pearsonr(np.concatenate(prediction_train).flatten(), np.concatenate(true_values_train))             
+            train_metrics['pearson'], _ = stats.pearsonr(np.concatenate(prediction_train).flatten(), np.concatenate(true_values_train))
         # Measure how long this epoch took.
         training_time = format_time(time.time() - t0)
 
         logger.info("  Average training loss: {0:.2f}".format(avg_train_loss))
         if args.task == 'classification':
-            logger.info("  Accuracy: {0:.3f}".format(metric))
+            logger.info('  Accuracy: {0:.3f}, F1: {0:.3f}'.format(train_metrics['acc'], train_metrics['f1']))
         else:
-            logger.info("  Pearson Correlation: {0:.3f}".format(metric))
+            logger.info("  Pearson Correlation: {0:.3f}".format(train_metrics['pearson']))
         logger.info("  Training epoch took: {:}".format(training_time))
 
         #Validation Progress
@@ -269,21 +263,28 @@ def run_train(device: torch.device, args):
         # Calculate the average loss over all of the batches.
         avg_val_loss = total_eval_loss / len(validation_dataloader)
         
+        prediction_val = np.concatenate(prediction_val)
+        true_values_val = np.concatenate(true_values_val)
+
+        val_metrics = {}
         # Calculate the Pearson Correlation
         if args.task == 'classification':
-            metric = (np.concatenate(prediction_val).flatten() == np.concatenate(true_values_val)).sum()/df_dev.shape[0]
+            val_metrics['acc'] = accuracy_score(true_values_val, prediction_val)
+            val_metrics['f1'] = f1_score(true_values_val, prediction_val)
         else:
-            metric, _ = stats.pearsonr(np.concatenate(prediction_val).flatten(), np.concatenate(true_values_val))             
-        
+            val_metrics['pearson'], _ = stats.pearsonr(np.concatenate(prediction_val).flatten(), np.concatenate(true_values_val))
+            
         # Measure how long the validation run took.
         validation_time = format_time(time.time() - t0)
-    
+
         logger.info("  Validation Loss: {0:.2f}".format(avg_val_loss))
         if args.task == 'classification':
-            logger.info("  Accuracy: {0:.3f}".format(metric))
+            logger.info('  Accuracy: {0:.3f}, F1: {0:.3f}'.format(val_metrics['acc'], val_metrics['f1']))
+            metric = val_metrics['acc']
         else:
-            logger.info("  Pearson Correlation: {0:.3f}".format(metric))
-        logger.info("  Validation took: {:}".format(validation_time))
+            logger.info('  Pearson Correlation: {0:.3f}'.format(val_metrics['pearson']))
+            metric = val_metrics['pearson']
+        logger.info('  Validation took: {:}'.format(validation_time))
 
         if metric < best_metric+args.delta:
             count_num += 1
@@ -293,12 +294,12 @@ def run_train(device: torch.device, args):
             
             #Save the model
             output_dir = args.output_dir
-    
+
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)
                 
             logger.info("Saving model to %s" % output_dir)
-    
+
             model_to_save = model  # Take care of distributed/parallel training
             model_to_save.save_pretrained(output_dir)
             tokenizer.save_pretrained(output_dir)
@@ -308,125 +309,21 @@ def run_train(device: torch.device, args):
         if count_num >= args.patience and args.early_stop:
             logger.info('Early stopping')
             break
-        
-    #Test Progress
-    logger.info("Running Test...")
-
-    dataset_test = prepare_data(df_test, tokenizer, args.max_seq_length, args.task)
-    logger.info('{:>5,} test samples'.format(len(dataset_test)))
-    test_dataloader = DataLoader(
-                dataset_test,  # The training samples.
-                sampler = RandomSampler(dataset_test), # Select batches randomly
-                batch_size = args.eval_batch_size # Trains with this batch size.
-                )
-    
-    t0 = time.time()
-
-    # Put the model in evaluation mode
-    model = model_to_save
-    model.eval()
-
-    # Tracking variables 
-    total_test_loss = 0
-
-    # Evaluate data for one epoch
-    prediction_test = []
-    true_values_test = []
-    for batch in test_dataloader:
-
-        b_input_ids = batch[0].to(device)
-        b_input_mask = batch[1].to(device)
-        b_labels = batch[2].to(device)
-
-        with torch.no_grad():        
-
-            loss, logits, _ = model(b_input_ids, 
-                                    attention_mask=b_input_mask,
-                                    labels=b_labels)
-        
-        # Accumulate the validation loss.
-        total_test_loss += loss.item()
-
-        if args.task == 'classification':
-            logits = torch.argmax(logits, dim=1)
-        
-        # Move logits and labels to CPU
-        logits = logits.detach().cpu().numpy()
-        label_ids = b_labels.to('cpu').numpy()
-            
-        prediction_test.append(logits)
-        true_values_test.append(label_ids)
-        
-    # Calculate the average loss over all of the batches.
-    avg_test_loss = total_test_loss / len(test_dataloader)
-    
-    # Calculate the Pearson Correlation
-    if args.task == 'classification':
-        metric = (np.concatenate(prediction_test).flatten() == np.concatenate(true_values_test)).sum()/df_test.shape[0]
-    else:
-        metric, _ = stats.pearsonr(np.concatenate(prediction_test).flatten(), np.concatenate(true_values_test))             
-    
-    # Measure how long the validation run took.
-    test_time = format_time(time.time() - t0)
-
-    logger.info("  Test Loss: {0:.2f}".format(avg_test_loss))
-    if args.task == 'classification':
-        logger.info("  Accuracy: {0:.3f}".format(metric))
-    else:
-        logger.info("  Pearson Correlation: {0:.3f}".format(metric))
-    logger.info("  Test took: {:}".format(test_time))
-    
-    logger.info("Training done!")
 
 
-def run_predict(device: torch.device, args):
+def run_predict(tokenizer, model, device: torch.device, args):
     
     df = getData(args.dataFolder, args.dataset, args.task)
     if args.test_set:
         _, _, df = splitData(df, True)
     else:
         df = balanceData(df)
-
-    # Load the BERT tokenizer.
-    logger.info('Loading BERT tokenizer...')
-    if args.model_kind == "roberta":
-        tokenizer = RobertaTokenizerFast.from_pretrained(args.model)
-    elif args.model_kind == "distilbert":
-        tokenizer = DistilBertTokenizerFast.from_pretrained(args.model)
-    elif args.model_kind == "bert":
-        tokenizer = BertTokenizerFast.from_pretrained(args.model)
-    else:
-        logger.error("Model kind not supported!")
     
     dataset = prepare_data(df, tokenizer, args.max_seq_length, args.task)
 
     prediction_dataloader = DataLoader(
         dataset, sampler = SequentialSampler(dataset), 
         batch_size = args.predict_batch_size)
-    
-    # Load BertForSequenceClassification, the pretrained BERT model with a single 
-    # linear classification layer on top.
-    if args.model_kind == "roberta": 
-        model = RobertaForSequenceClassification.from_pretrained(
-            args.model,
-            num_labels = 2 if args.task == 'classification' else 1, # Set 1 to do regression.
-            output_attentions = False, # Whether the model returns attentions weights.
-            output_hidden_states = True, # Whether the model returns all hidden-states.
-            )
-    elif args.model_kind == "distilbert":
-        model = DistilBertForSequenceClassification.from_pretrained(
-            args.model,
-            num_labels = 2 if args.task == 'classification' else 1, # Set 1 to do regression.
-            output_attentions = False, # Whether the model returns attentions weights.
-            output_hidden_states = True, # Whether the model returns all hidden-states.
-            )
-    elif args.model_kind == "bert":
-        model = BertForSequenceClassification.from_pretrained(
-            args.model,
-            num_labels = 2 if args.task == 'classification' else 1, # Set 1 to do regression.
-            output_attentions = False, # Whether the model returns attentions weights.
-            output_hidden_states = True, # Whether the model returns all hidden-states.
-            )
     
     model.to(device)
     
@@ -488,11 +385,42 @@ def main():
     np.random.seed(42)
     torch.manual_seed(42)
     torch.cuda.manual_seed(42)
+
+    if args.model_kind == 'roberta':
+        from transformers import RobertaTokenizerFast
+        from models.roberta import RobertaForSequenceClassification
+        tokenizer = RobertaTokenizerFast.from_pretrained(args.model)
+        model = RobertaForSequenceClassification.from_pretrained(
+            args.model,
+            num_labels = 2 if args.task == 'classification' else 1, # Set 1 to do regression.
+            output_attentions = False, # Whether the model returns attentions weights.
+            output_hidden_states = True, # Whether the model returns all hidden-states.
+            return_dict=False,)
+    elif args.model_kind == 'distilbert':
+        from transformers import DistilBertTokenizerFast
+        from models.distilbert import DistilBertForSequenceClassification
+        tokenizer = DistilBertTokenizerFast.from_pretrained(args.model)
+        model = DistilBertForSequenceClassification.from_pretrained(
+            args.model,
+            num_labels = 2 if args.task == 'classification' else 1, # Set 1 to do regression.
+            output_attentions = False, # Whether the model returns attentions weights.
+            output_hidden_states = True, # Whether the model returns all hidden-states.
+            return_dict=False,)
+    elif args.model_kind == 'bert':
+        from transformers import BertTokenizerFast
+        from models.bert import BertForSequenceClassification
+        tokenizer = BertTokenizerFast.from_pretrained(args.model)
+        model = BertForSequenceClassification.from_pretrained(
+            args.model,
+            num_labels = 2 if args.task == 'classification' else 1, # Set 1 to do regression.
+            output_attentions = False, # Whether the model returns attentions weights.
+            output_hidden_states = True, # Whether the model returns all hidden-states.
+            return_dict=False,)
     
     if args.do_train:
-        run_train(device, args)
+        run_train(tokenizer, model, device, args)
     elif args.do_predict:
-        run_predict(device, args)
+        run_predict(tokenizer, model, device, args)
     else:
         Exception("Have to do one of the training or prediction!")
     
