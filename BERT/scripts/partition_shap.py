@@ -8,14 +8,12 @@ from scipy import stats
 import shap
 import spacy
 import tokenizations
+import random
 
 import torch
-from transformers import RobertaTokenizerFast, DistilBertTokenizerFast
 
 from utils.preprocess import getData, splitData
 from utils.utils import get_dataset
-from models.modeling_roberta import RobertaForSequenceClassification
-from models.modeling_distilbert import DistilBertForSequenceClassification
 
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S',
@@ -35,7 +33,6 @@ parser.add_argument("--model", required=True, type=str, help="The pretrained Ber
 parser.add_argument("--do_lower_case", action="store_true",
                         help= "Whether to lower case the input text. Should be True for uncased \
                             models and False for cased models.")
-parser.add_argument("--tokenizer", type=str, help="Dir to tokenizer for prediction.")
 parser.add_argument("--do_alignment", action="store_true")
 
 parser.add_argument("--max_seq_length", type=int, default=128,
@@ -48,10 +45,12 @@ args = parser.parse_args()
     
 def get_word_rating(data, f, tokenizer, gold=None):    
     logger.info('Getting word values')
-    explainer = shap.Explainer(f, tokenizer)
+    masker = shap.maskers.Text(tokenizer)
+    explainer = shap.explainers.Partition(f, masker)
     shap_values = explainer(data)
 
     word2values = {}
+    word2freq = {}
     
     if args.do_alignment:
         tokenizer_spacy = spacy.load("./fasttext")
@@ -66,6 +65,11 @@ def get_word_rating(data, f, tokenizer, gold=None):
                 truncation= True,)["input_ids"][0])
         if args.do_alignment:
             sent_spacy = [token.text.lower() for token in tokenizer_spacy(sent)]
+            for token in set(sent_spacy):
+                if token not in word2freq:
+                    word2freq[token] = 1
+                else:
+                    word2freq[token] += 1
             _, alignment= tokenizations.get_alignments(sent_bert, sent_spacy)
             for index_word, word in enumerate(sent_spacy):
                 value = 0
@@ -82,6 +86,12 @@ def get_word_rating(data, f, tokenizer, gold=None):
                         #word2values[word].append(value/len(alignment[index_word]))
                         word2values[word].append(value)
         else:
+            for token in set(sent_bert):
+                if token not in tokenizer.special_tokens_map.values():
+                    if token not in word2freq:
+                        word2freq[token] = 1
+                    else:
+                        word2freq[token] += 1
             for index_word, word in enumerate(sent_bert):
                 if word not in tokenizer.special_tokens_map.values():
                     if word not in word2values:
@@ -93,7 +103,7 @@ def get_word_rating(data, f, tokenizer, gold=None):
     for word in word2values:
         lexicon['Word'].append(word)
         lexicon['Value'].append(np.mean(word2values[word]))
-        lexicon['Freq'].append(len(word2values[word]))
+        lexicon['Freq'].append(word2freq[word])
 
     lexicon_df = pd.DataFrame.from_dict(lexicon).sort_values(by='Value')
 
@@ -127,6 +137,11 @@ if __name__=="__main__":
         logger.info('No GPU available, using the CPU instead.')
         device = torch.device("cpu")
         
+    random.seed(42)
+    np.random.seed(42)
+    torch.manual_seed(42)
+    torch.cuda.manual_seed(42)
+    
     df = getData(args.dataFolder, args.dataset, args.task)
     logger.info("Total Data:{}".format(df.shape[0]))
     if args.task == "classification":
@@ -137,27 +152,27 @@ if __name__=="__main__":
         logger.warning("Task Type Error!")
     logger.info("Using Data:{}".format(df_train.shape[0]))
 
-
     # Load the BERT tokenizer.
     logger.info('Loading BERT tokenizer...')
     if args.model_kind == 'roberta':
-        try:
-            tokenizer = RobertaTokenizerFast.from_pretrained(args.tokenizer, do_lower_case=args.do_lower_case)
-        except:
-            logger.warning("Tokenizer loading failed")
+        from transformers import RobertaTokenizerFast
+        from models.roberta import RobertaForSequenceClassification
+        tokenizer = RobertaTokenizerFast.from_pretrained(args.model)
         model = RobertaForSequenceClassification.from_pretrained(args.model).to(device)
     elif args.model_kind == 'distilbert':
-        try:
-            tokenizer = DistilBertTokenizerFast.from_pretrained(args.tokenizer, do_lower_case=args.do_lower_case)
-        except:
-            logger.warning("Tokenizer loading failed")
+        from transformers import DistilBertTokenizerFast
+        from models.distilbert import DistilBertForSequenceClassification
+        tokenizer = DistilBertTokenizerFast.from_pretrained(args.model)
         model = DistilBertForSequenceClassification.from_pretrained(args.model).to(device)
     
     def f(x):
         input_ids, attention_masks = get_dataset(x, tokenizer, args.max_seq_length, args.task)
         input_ids = input_ids.to(device)
         attention_masks = attention_masks.to(device)
-        outputs = model(input_ids,attention_masks)[0][:, -1].detach().cpu().numpy()
-        return outputs
+        outputs = model(input_ids,attention_masks)[0]
+        scores = torch.nn.Softmax(dim=-1)(outputs)
+        val = torch.logit(scores).detach().cpu().numpy()
+
+        return val
     
     get_word_rating(df_train.text.values, f, tokenizer, args.gold_word)
