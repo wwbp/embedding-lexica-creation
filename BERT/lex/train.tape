@@ -102,18 +102,8 @@ plan lex_mask {
 }
 
 plan lex_ps {
-  #reach ps via (dataset: yelp_subset) * (task: classification regression) * (max_seq_length: 128) 
-  #* (train_batch_size: 32) * (model_kind: bert distilbert)
-  #reach ps via (dataset: yelp_subset) * (task: classification regression) * (max_seq_length: 256) 
-  #* (train_batch_size: 16) * (model_kind: bert distilbert)
-  #reach ps via (dataset: yelp_subset) * (task: classification regression) * (max_seq_length: 512) 
-  #* (train_batch_size: 8) * (model_kind: bert distilbert)
-  reach ps via (dataset: nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise) * (task: classification) 
-  * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: bert distilbert)
-  reach ps via (dataset: empathy amazon_finefood_subset amazon_toys_subset) * (task: classification regression) * (max_seq_length: 128) 
-  * (train_batch_size: 32) * (model_kind: bert distilbert)
-  reach ps via (dataset: yelp_subset) * (task: classification regression) * (max_seq_length: 200) 
-  * (train_batch_size: 16) * (model_kind: bert distilbert)
+  reach ps via (dataset: yelp_subset nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise amazon_finefood_subset amazon_toys_subset) 
+  * (task: classification) * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: roberta distilbert)
 }
 
 plan lex_deep {
