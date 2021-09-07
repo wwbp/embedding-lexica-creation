@@ -119,15 +119,13 @@ def get_word_rating(model, input_ids, attention_masks, text, tokenizer, gold):
         if args.do_alignment:
             sent_spacy = [token.text.lower() for token in tokenizer_spacy(text[i])]
             _, alignment= tokenizations.get_alignments(words, sent_spacy)
+            valid_word = {}
             for index_word, word in enumerate(sent_spacy):
                 word_value = 0
-                for index in alignment[index_word]:
-                    try:
-                        word_value += value[index]
-                    except IndexError:
-                        logger.info(words)
-                        logger.info(sent_spacy)
-                        logger.info(alignment)
+                if alignment[index_word]:
+                    valid_word.add(word)
+                    for index in alignment[index_word]:
+                            word_value += value[index]
                 if word_value != 0:
                     if word not in word2values:
                         #word2values[word] = [word_value/len(alignment[index_word])]
@@ -135,7 +133,18 @@ def get_word_rating(model, input_ids, attention_masks, text, tokenizer, gold):
                     else:
                         #word2values[word].append(word_value/len(alignment[index_word]))
                         word2values[word].append(word_value)
+            for token in valid_word:
+                if token not in word2freq:
+                    word2freq[token] = 1
+                else:
+                    word2freq[token] += 1
         else:
+            for token in set(words):
+                if token not in tokenizer.special_tokens_map.values():
+                    if token not in word2freq:
+                        word2freq[token] = 1
+                    else:
+                        word2freq[token] += 1
             for index, word in enumerate(words):
                 if word not in tokenizer.special_tokens_map.values():
                     if word not in word2values:
@@ -147,7 +156,7 @@ def get_word_rating(model, input_ids, attention_masks, text, tokenizer, gold):
     for word in word2values:
         lexicon['Word'].append(word)
         lexicon['Value'].append(np.mean(word2values[word]))
-        lexicon['Freq'].append(len(word2values[word]))
+        lexicon['Freq'].append(word2freq[word])
     
     lexicon_df = pd.DataFrame.from_dict(lexicon).sort_values(by='Value')
     
