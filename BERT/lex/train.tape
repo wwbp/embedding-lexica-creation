@@ -4,14 +4,14 @@ task mask : rg : data
   :: pyenv=@
   :: .submitter=$grid :: .resource_flags=$gpuResourceFlags :: .action_flags=$gpuResourceFlags
 { 
-  model="/home/zwu49/ztwu/empathy_dictionary/new_nrc/trainOnBert/dataset.*+max_seq_length.^+model_kind.#+pretrained.#-base+task.@+train_batch_size.!"
+  model="/home/zwu49/ztwu/embedding-lexica-creation/rerun/trainOnBert/dataset.*+max_seq_length.^+model_kind.#+pretrained.#-base+task.@+train_batch_size.!"
   model=${model//\*/$dataset}
   model=${model//^/$max_seq_length}
   model=${model//#/$model_kind}
   model=${model//@/$task}
   model=${model//!/$train_batch_size}
 
-  out="/home/zwu49/ztwu/empathy_dictionary/bert-pytorch/lexicon_yelp"
+  out="/home/zwu49/ztwu/embedding-lexica-creation/lexicon_rerun"
   
   if [ ! -d $out ]; then
     mkdir $out
@@ -37,14 +37,14 @@ task ps : rg : data
   :: pyenv=@
   :: .submitter=$grid :: .resource_flags=$gpuResourceFlags :: .action_flags=$gpuResourceFlags
 {
-  model="/home/zwu49/ztwu/empathy_dictionary/new_nrc/trainOnBert/dataset.*+max_seq_length.^+model_kind.#+pretrained.#-base-uncased+task.@+train_batch_size.!"
+  model="/home/zwu49/ztwu/embedding-lexica-creation/rerun/trainOnBert/dataset.*+max_seq_length.^+model_kind.#+pretrained.#-base+task.@+train_batch_size.!"
   model=${model//\*/$dataset}
   model=${model//^/$max_seq_length}
   model=${model//#/$model_kind}
   model=${model//@/$task}
   model=${model//!/$train_batch_size}
 
-  out="/home/zwu49/ztwu/empathy_dictionary/bert-pytorch/lexicon_yelp"
+  out="/home/zwu49/ztwu/embedding-lexica-creation/lexicon_rerun"
   
   if [ ! -d $out ]; then
     mkdir $out
@@ -69,14 +69,14 @@ task deep : rg : data
   :: pyenv=@
   :: .submitter=$grid :: .resource_flags=$gpuResourceFlags :: .action_flags=$gpuResourceFlags
 {
-  model="/home/zwu49/ztwu/empathy_dictionary/roberta/trainOnBert/dataset.*+max_seq_length.^+model_kind.#+pretrained.#-base+task.@+train_batch_size.!"
+  model="/home/zwu49/ztwu/embedding-lexica-creation/rerun/trainOnBert/dataset.*+max_seq_length.^+model_kind.#+pretrained.#-base+task.@+train_batch_size.!"
   model=${model//\*/$dataset}
   model=${model//^/$max_seq_length}
   model=${model//#/$model_kind}
   model=${model//@/$task}
   model=${model//!/$train_batch_size}
 
-  out="/home/zwu49/ztwu/empathy_dictionary/bert-pytorch/lexicon_fast_sum"
+  out="/home/zwu49/ztwu/embedding-lexica-creation/lexicon_rerun"
   
   if [ ! -d $out ]; then
     mkdir $out
@@ -97,18 +97,8 @@ task deep : rg : data
 }
 
 plan lex_mask {
-  #reach mask via (dataset: yelp_subset) * (task: classification regression) * (max_seq_length: 128) 
-  #* (train_batch_size: 32) * (model_kind: bert distilbert)
-  #reach mask via (dataset: yelp_subset) * (task: classification regression) * (max_seq_length: 256) 
-  #* (train_batch_size: 16) * (model_kind: bert distilbert)
-  #reach mask via (dataset: yelp_subset) * (task: classification regression) * (max_seq_length: 512) 
-  #* (train_batch_size: 8) * (model_kind: bert distilbert)
-  reach mask via (dataset: nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise) * (task: classification) 
-  * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: bert distilbert)
-  reach mask via (dataset: empathy amazon_finefood_subset amazon_toys_subset) * (task: classification regression) * (max_seq_length: 128) 
-  * (train_batch_size: 32) * (model_kind: bert distilbert)
-  reach mask via (dataset: yelp_subset) * (task: classification regression) * (max_seq_length: 200) 
-  * (train_batch_size: 16) * (model_kind: bert distilbert)
+  reach mask via (dataset: yelp_subset nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise amazon_finefood_subset amazon_toys_subset) 
+  * (task: classification) * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: roberta distilbert)
 }
 
 plan lex_ps {
