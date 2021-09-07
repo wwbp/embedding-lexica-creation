@@ -30,9 +30,6 @@ parser.add_argument("--task", required=True, type=str, help="Classification or r
 
 parser.add_argument("--model_kind", required=True, type=str)
 parser.add_argument("--model", required=True, type=str, help="The pretrained Bert model we choose.")
-parser.add_argument("--do_lower_case", action="store_true",
-                        help= "Whether to lower case the input text. Should be True for uncased \
-                            models and False for cased models.")
 parser.add_argument("--do_alignment", action="store_true")
 
 parser.add_argument("--max_seq_length", type=int, default=128,

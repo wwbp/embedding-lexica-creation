@@ -24,10 +24,8 @@ task mask : rg : data
     --task=$task \
     --model_kind=$model_kind \
     --model=$model/best_model \
-    --tokenizer=$model/best_model \
     --max_seq_length=$max_seq_length \
     --batch_size=$train_batch_size \
-    --do_lower_case \
     --do_alignment
 }
 
@@ -57,9 +55,7 @@ task ps : rg : data
     --task=$task \
     --model_kind=$model_kind \
     --model=$model/best_model \
-    --tokenizer=$model/best_model \
     --max_seq_length=$max_seq_length \
-    --do_lower_case \
     --do_alignment
 }
 
@@ -89,9 +85,7 @@ task deep : rg : data
     --task=$task \
     --model_kind=$model_kind \
     --model=$model/best_model \
-    --tokenizer=$model/best_model \
     --max_seq_length=$max_seq_length \
-    --do_lower_case \
     --do_alignment \
     --background_size=50
 }
