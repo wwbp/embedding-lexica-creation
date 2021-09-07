@@ -62,7 +62,7 @@ def get_word_rating(data, f, tokenizer, gold=None):
         if args.do_alignment:
             sent_spacy = [token.text.lower() for token in tokenizer_spacy(sent)]
             _, alignment= tokenizations.get_alignments(sent_bert, sent_spacy)
-            valid_word = {}
+            valid_word = set()
             for index_word, word in enumerate(sent_spacy):
                 value = 0
                 if alignment[index_word]:
