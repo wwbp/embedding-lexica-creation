@@ -1,5 +1,5 @@
-package rg :: .versioner=disk .path="/home/zwu49/ztwu/empathy_dictionary/BERT" .rev=NULL {}
-package data :: .versioner=disk .path="/home/zwu49/ztwu/empathy_dictionary/data" .rev=NULL {}
+package rg :: .versioner=disk .path="/home/zwu49/ztwu/embedding-lexica-creation/BERT" .rev=NULL {}
+package data :: .versioner=disk .path="/home/zwu49/ztwu/masker/shap_maskers/cleandata" .rev=NULL {}
 
 global {
   grid="sge"
