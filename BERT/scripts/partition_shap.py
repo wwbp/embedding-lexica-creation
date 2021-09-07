@@ -12,7 +12,6 @@ import random
 
 import torch
 
-from utils.preprocess import getData, splitData
 from utils.utils import get_dataset
 
 
@@ -62,19 +61,14 @@ def get_word_rating(data, f, tokenizer, gold=None):
                 truncation= True,)["input_ids"][0])
         if args.do_alignment:
             sent_spacy = [token.text.lower() for token in tokenizer_spacy(sent)]
-            for token in set(sent_spacy):
-                if token not in word2freq:
-                    word2freq[token] = 1
-                else:
-                    word2freq[token] += 1
             _, alignment= tokenizations.get_alignments(sent_bert, sent_spacy)
+            valid_word = {}
             for index_word, word in enumerate(sent_spacy):
                 value = 0
-                for index in alignment[index_word]:
-                    try:
-                        value += shap_values.values[index_sent][index]
-                    except:
-                        continue
+                if alignment[index_word]:
+                    valid_word.add(word)
+                    for index in alignment[index_word]:
+                        value += shap_values.values[index_sent][index][1]
                 if value != 0:
                     if word not in word2values:
                         #word2values[word] = [value/len(alignment[index_word])]
@@ -82,6 +76,11 @@ def get_word_rating(data, f, tokenizer, gold=None):
                     else:
                         #word2values[word].append(value/len(alignment[index_word]))
                         word2values[word].append(value)
+            for token in valid_word:
+                if token not in word2freq:
+                    word2freq[token] = 1
+                else:
+                    word2freq[token] += 1
         else:
             for token in set(sent_bert):
                 if token not in tokenizer.special_tokens_map.values():

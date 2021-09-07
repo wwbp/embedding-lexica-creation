@@ -127,30 +127,3 @@ plan debug {
   reach ps via (dataset: nrc_surprise) * (task: classification) * (max_seq_length: 128) 
   * (train_batch_size: 32) * (model_kind: distilbert)
 }
-
-plan lex_roberta {
-  reach mask via (dataset: nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise empathy amazon_finefood_subset amazon_toys_subset) * (task: classification) 
-  * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: roberta)
-  reach mask via (dataset: yelp_subset) * (task: classification) * (max_seq_length: 200) * (train_batch_size: 16) * (model_kind: roberta)
-  reach ps via (dataset: nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise empathy amazon_finefood_subset amazon_toys_subset) * (task: classification) 
-  * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: roberta)
-  reach ps via (dataset: yelp_subset) * (task: classification) * (max_seq_length: 200) * (train_batch_size: 16) * (model_kind: roberta)
-}
-
-plan lex_roberta_ps {
-  reach ps via (dataset: nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise empathy amazon_finefood_subset amazon_toys_subset) * (task: classification) 
-  * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: roberta)
-  reach ps via (dataset: yelp_subset) * (task: classification) * (max_seq_length: 200) * (train_batch_size: 16) * (model_kind: roberta)
-}
-
-plan lex_yelp {
-  reach ps via (dataset: yelp_subset) * (task: classification) * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: distilbert)
-  reach mask via (dataset: yelp_subset) * (task: classification) * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: distilbert)
-}
-
-plan lex_nrc {
-  reach ps via (dataset: nrc_anger nrc_fear) * (task: classification) 
-  * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: distilbert)
-  #reach mask via (dataset: nrc_joy nrc_sadness nrc_fear nrc_anger nrc_surprise) * (task: classification) 
-  #* (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: roberta)
-}

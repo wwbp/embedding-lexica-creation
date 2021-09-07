@@ -5,18 +5,15 @@ from tqdm import tqdm
 
 import numpy as np
 import pandas as pd
+import random
 from scipy import stats
 import spacy
 import tokenizations
 
 import torch
 from torch.utils.data import DataLoader, SequentialSampler, TensorDataset
-from transformers import RobertaTokenizerFast, DistilBertTokenizerFast
 
-from utils.preprocess import getData, splitData
 from utils.utils import get_dataset
-from models.modeling_roberta import RobertaForSequenceClassification
-from models.modeling_distilbert import DistilBertForSequenceClassification
 
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S',
@@ -53,6 +50,7 @@ def get_word_rating(model, input_ids, attention_masks, text, tokenizer, gold):
     logger.info('Getting lexicon')
     
     word2values = {}
+    word2freq = {}
     
     if args.do_alignment:
         tokenizer_spacy = spacy.load("./fasttext")
@@ -182,30 +180,27 @@ if __name__=="__main__":
     else:
         logger.info('No GPU available, using the CPU instead.')
         device = torch.device("cpu")
+
+    random.seed(42)
+    np.random.seed(42)
+    torch.manual_seed(42)
+    torch.cuda.manual_seed(42)
         
-    df = getData(args.dataFolder, args.dataset, args.task)
-    logger.info("Total Data:{}".format(df.shape[0]))
-    if args.task == "classification":
-        df_train, df_dev, df_test = splitData(df, balanceTrain=True)
-    elif args.task == "regression":
-        df_train, df_dev, df_test = splitData(df, balanceTrain=False)
-    else:
-        logger.warning("Task Type Error!")
+    path = os.path.join(args.dataFolder, args.dataset)
+    df_train = pd.read_csv(os.path.join(path, 'train.csv'))
     logger.info("Using Data:{}".format(df_train.shape[0]))
 
     # Load the BERT tokenizer.
     logger.info('Loading BERT tokenizer...')
     if args.model_kind == 'roberta':
-        try:
-            tokenizer = RobertaTokenizerFast.from_pretrained(args.tokenizer, do_lower_case=args.do_lower_case)
-        except:
-            logger.warning("Tokenizer loading failed")
+        from transformers import RobertaTokenizerFast
+        from models.roberta import RobertaForSequenceClassification
+        tokenizer = RobertaTokenizerFast.from_pretrained(args.model)
         model = RobertaForSequenceClassification.from_pretrained(args.model).to(device)
     elif args.model_kind == 'distilbert':
-        try:
-            tokenizer = DistilBertTokenizerFast.from_pretrained(args.tokenizer, do_lower_case=args.do_lower_case)
-        except:
-            logger.warning("Tokenizer loading failed")
+        from transformers import DistilBertTokenizerFast
+        from models.distilbert import DistilBertForSequenceClassification
+        tokenizer = DistilBertTokenizerFast.from_pretrained(args.model)
         model = DistilBertForSequenceClassification.from_pretrained(args.model).to(device)
     
     input_ids, attention_masks = get_dataset(df_train.text.values, tokenizer, args.max_seq_length, args.task)
