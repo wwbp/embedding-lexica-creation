@@ -139,14 +139,8 @@ if __name__=="__main__":
     torch.manual_seed(42)
     torch.cuda.manual_seed(42)
     
-    df = getData(args.dataFolder, args.dataset, args.task)
-    logger.info("Total Data:{}".format(df.shape[0]))
-    if args.task == "classification":
-        df_train, df_dev, df_test = splitData(df, balanceTrain=True)
-    elif args.task == "regression":
-        df_train, df_dev, df_test = splitData(df, balanceTrain=False)
-    else:
-        logger.warning("Task Type Error!")
+    path = os.path.join(args.dataFolder, args.dataset)
+    df_train = pd.read_csv(os.path.join(path, 'train.csv'))
     logger.info("Using Data:{}".format(df_train.shape[0]))
 
     # Load the BERT tokenizer.
