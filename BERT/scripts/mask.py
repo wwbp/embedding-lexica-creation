@@ -30,10 +30,7 @@ parser.add_argument("--task", required=True, type=str, help="Classification or r
 
 parser.add_argument("--model_kind", required=True, type=str)
 parser.add_argument("--model", required=True, type=str, help="The pretrained Bert model we choose.")
-parser.add_argument("--do_lower_case", action="store_true",
-                        help= "Whether to lower case the input text. Should be True for uncased \
-                            models and False for cased models.")
-parser.add_argument("--tokenizer", type=str, help="Dir to tokenizer for prediction.")
+
 parser.add_argument("--do_alignment", action="store_true")
 
 parser.add_argument("--max_seq_length", type=int, default=128,
@@ -125,7 +122,12 @@ def get_word_rating(model, input_ids, attention_masks, text, tokenizer, gold):
                 if alignment[index_word]:
                     valid_word.add(word)
                     for index in alignment[index_word]:
-                            word_value += value[index]
+                            try:
+                                word_value += value[index]
+                            except IndexError:
+                                logger.info(sent_spacy)
+                                logger.info(words)
+                                logger.info(value)
                 if word_value != 0:
                     if word not in word2values:
                         #word2values[word] = [word_value/len(alignment[index_word])]
