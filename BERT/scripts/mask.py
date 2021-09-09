@@ -128,6 +128,7 @@ def get_word_rating(model, input_ids, attention_masks, text, tokenizer, gold):
                                 logger.info(sent_spacy)
                                 logger.info(words)
                                 logger.info(value)
+                                continue
                 if word_value != 0:
                     if word not in word2values:
                         #word2values[word] = [word_value/len(alignment[index_word])]

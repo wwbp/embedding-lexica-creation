@@ -68,7 +68,13 @@ def get_word_rating(data, f, tokenizer, gold=None):
                 if alignment[index_word]:
                     valid_word.add(word)
                     for index in alignment[index_word]:
-                        value += shap_values.values[index_sent][index][1]
+                        try:
+                            value += shap_values.values[index_sent][index][1]
+                        except IndexError:
+                            logger.info(alignment)
+                            logger.info(sent_bert)
+                            logger.info(sent_spacy)
+                            continue
                 if value != 0:
                     if word not in word2values:
                         #word2values[word] = [value/len(alignment[index_word])]
