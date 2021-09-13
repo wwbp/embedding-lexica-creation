@@ -2,6 +2,7 @@ import logging
 from tqdm import tqdm
 import itertools
 from collections import Counter
+import os
 
 import pandas as pd
 import numpy as np
@@ -14,8 +15,6 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 import shap
-
-from preprocessing.preprocess import *
 
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S',
@@ -62,7 +61,7 @@ def getWordCount(df, nlp):
     for i in range(len(df)):
 
         doc = nlp(df.iloc[i]['text'].lower())
-        words = [token.text for token in doc]
+        words = set([token.text for token in doc])
 
         tokenList.append(words)
         
@@ -220,9 +219,8 @@ def getWordPred_SVM(model, trainDf, nlp ):
 
     wordDf = pd.DataFrame({'Word':wordList,'Value':svmScores})
     wordDf = wordDf.merge(wordCount, on='Word')
-    wordDf = wordDf.sort_values('Value',ascending = False)
-    wordDf['SVM_Rank'] = list(range(len(wordDf)))
-   
+    wordDf = wordDf.sort_values('Value')
+       
     return wordDf
 
 
@@ -238,20 +236,18 @@ def generateLexicon_SVM(model, trainDf, nlp):
     return getWordPred_SVM(model, trainDf, nlp)
 
 
-def testSVM( model, dataset, lexiconWords, lexiconMap, nlp, dataFolder, train = False):
+def testSVM( model, dataset, lexiconWords, lexiconMap, nlp, dataFolder):
     
     ##Loading the dataset
     if ('dialog' not in dataset) and ('song' not in dataset) and ('friends' not in dataset) and ('emobank' not in dataset):
-        trainDf, devDf, testDf = splitData(getData(dataFolder, dataset))
+        path = os.path.join(dataFolder, dataset)
+        testDf = pd.read_csv(os.path.join(path, 'test.csv'))
     else:
-        testDf = balanceData(getData(dataFolder, dataset))
-        
+        path = os.path.join(dataFolder, 'test_datasets')
+        testDf = pd.read_csv(os.path.join(path, dataset+'.csv'))
+
     ## Generating the embedding data using Spacy     
-    if train:
-        testData = generateFastTextData_Spacy(trainDf, nlp, textVariable = 'text')
-        testDf = trainDf
-    else:
-        testData = generateFastTextData_Spacy(testDf, nlp, textVariable = 'text')
+    testData = generateFastTextData_Spacy(testDf, nlp, textVariable = 'text')
         
     ## Generating the scores from the trained SVM model for the testing data
     scores = model.decision_function(testData)
@@ -276,11 +272,10 @@ def testSVM( model, dataset, lexiconWords, lexiconMap, nlp, dataFolder, train = 
 ###########################
 
 
-def testModel_FFN(net, testLoader, returnScore = False, device='cuda:0'):
+def testModel_FFN(net, testLoader, device='cuda:0'):
     net.eval()
     net.to(device)
 
-    preds = []
     targets = []
     scores = []
 
@@ -293,22 +288,17 @@ def testModel_FFN(net, testLoader, returnScore = False, device='cuda:0'):
             
             scores.append(nn.Softmax()(output)[:,1].cpu().numpy())
 
-            preds += np.argmax(output.cpu().numpy(),1).tolist()
-
             targets.append( target.cpu().numpy() )
 
-    target =np.concatenate(targets)
-    scores =np.concatenate(scores)
-    
-    acc = accuracy_score(preds, target)
-    f1 = f1_score(preds,target)
-    
-    net.train()
-    
-    if returnScore:
-        return acc, f1, scores
-    else:
-        return acc, f1
+    target = np.concatenate(targets)
+    scores = np.concatenate(scores)
+    scores = scores.reshape(-1, 1)
+
+    logModel = LogisticRegression()
+    modelAcc = np.round(np.mean(cross_val_score(logModel, scores, target, cv=5, scoring='accuracy')),3)
+    modelF1 = np.round(np.mean(cross_val_score(logModel, scores, target, cv=5, scoring='f1')),3)
+
+    return modelAcc, modelF1
     
     
 def getWordPred_FFN(NNnet, trainDf, nlp, device = 'cuda:0' ):
@@ -337,75 +327,9 @@ def getWordPred_FFN(NNnet, trainDf, nlp, device = 'cuda:0' ):
     NNwordPred = wordPred.detach().cpu().numpy()[:,1]
     NNwordDf = pd.DataFrame({'Word':wordList,'Value':NNwordPred})
     NNwordDf = NNwordDf.merge(wordCount, on='Word')
-    NNwordDf = NNwordDf.sort_values('Value',ascending = False)
-    NNwordDf['NN_Rank'] = list(range(len(NNwordDf)))
+    NNwordDf = NNwordDf.sort_values('Value')
     
     return NNwordDf
-
-
-def getWordPred_FFN_PS(NNnet, trainDf, masker, nlp, background, device):
-    
-    logger.info('Getting word values')
-    wordCount = getWordCount(trainDf, nlp)
-    wordList = list(wordCount['Word'])
-
-    embList = []
-    for word in wordList:
-        
-        with nlp.disable_pipes():
-            emb = nlp(word.lower()).vector.reshape(1,-1)
-            embList.append(emb)
-
-    embData = np.concatenate(embList,0)
-    if masker == "partition":
-        assert background is not None
-        def f(x):
-            x = torch.tensor(x).to(device)
-            NNnet.to(device)
-            outputs = NNnet(x)[:, -1].detach().cpu().numpy()
-            return outputs
-        explainer = shap.Explainer(f, shap.maskers.Partition(background, 500), algorithm="partition")
-        shap_values = explainer(embData)
-    elif masker == "text":
-        def f(x):
-            trainData = torch.tensor(generateFastTextData_Spacy(x, nlp)).to(device)
-            NNnet.to(device)
-            outputs = NNnet(trainData)[:, -1].detach().cpu().numpy()
-            return outputs
-    else:
-        logger.error("This masker is not supported!")
-
-    lexicon = pd.DataFrame({'Word':wordList,'Value':shap_values.values.sum(axis=1)})
-    lexicon = lexicon.merge(wordCount, on="Word")
-    lexicon = lexicon.sort_values('Value',ascending = False)
-    
-    return lexicon
-
-
-def getWordPred_FFN_Deep(NNnet, trainDf, nlp, background, device):
-    logger.info('Getting word values')
-    wordCount = getWordCount(trainDf, nlp)
-    wordList = list(wordCount['Word'])
-
-    embList = []
-    for word in wordList:
-        
-        with nlp.disable_pipes():
-            emb = nlp(word.lower()).vector.reshape(1,-1)
-            embList.append(emb)
-    
-    embData = torch.tensor(np.concatenate(embList,0)).to(device)
-
-    NNnet = NNnet.to(device)
-    background = background.to(device)
-    explainer = shap.DeepExplainer(NNnet, background)
-    shap_values=explainer.shap_values(embData)[1]
-
-    lexicon = pd.DataFrame({'Word':wordList,'Value':shap_values.sum(axis=1)})
-    lexicon = lexicon.merge(wordCount, on="Word")
-    lexicon = lexicon.sort_values('Value',ascending = False)
-    
-    return lexicon 
 
     
 def trainFFN(trainData, testData, max_epochs = 5, batchSize = 5, device='cuda:0'):
@@ -428,7 +352,7 @@ def trainFFN(trainData, testData, max_epochs = 5, batchSize = 5, device='cuda:0'
     
     NNnet.train()
     classLoss = nn.CrossEntropyLoss()
-    best_f1 = 0
+    best_acc = 0
     tol = 0
 
     for _ in range(max_epochs):
@@ -452,8 +376,8 @@ def trainFFN(trainData, testData, max_epochs = 5, batchSize = 5, device='cuda:0'
         acc,f1 = testModel_FFN(NNnet, testLoader, device=device)
         logger.info(f"Validation Acc : {acc} Validation F1 : {f1}")
 
-        if f1 > best_f1:
-            best_f1 = f1
+        if acc > best_acc:
+            best_acc = acc
             tol = 0
             best_model = NNnet
             continue
@@ -468,35 +392,24 @@ def trainFFN(trainData, testData, max_epochs = 5, batchSize = 5, device='cuda:0'
     return best_model
     
     
-def generateLexicon_FFN(NNnet, trainDf, nlp, method = 'feature', masker = None, background=None, device = 'cuda:0'):
+def generateLexicon_FFN(NNnet, trainDf, nlp, device = 'cuda:0'):
     
-    if method == "feature":
-        wordPred = getWordPred_FFN(NNnet, trainDf, nlp, device)
+    wordPred = getWordPred_FFN(NNnet, trainDf, nlp, device)
 
-    elif method == "partition":
-        assert masker is not None
-        wordPred = getWordPred_FFN_PS(NNnet, trainDf, masker, nlp, background, device)
-    
-    elif method == "deep":
-        wordPred = getWordPred_FFN_Deep(NNnet, trainDf, nlp, background, device)
-    
     return wordPred
 
 
-def testFFN( NNnet, dataset, lexiconWords, lexiconMap, nlp, dataFolder, device, train = False):
+def testFFN( NNnet, dataset, lexiconWords, lexiconMap, nlp, dataFolder, device):
     
     if ('dialog' not in dataset) and ('song' not in dataset) and ('friends' not in dataset) and ('emobank' not in dataset):
-        trainDf, devDf, testDf = splitData(getData(dataFolder, dataset))
+        path = os.path.join(dataFolder, dataset)
+        testDf = pd.read_csv(os.path.join(path, 'test.csv'))
     else:
-        testDf = balanceData(getData(dataFolder, dataset))
+        path = os.path.join(dataFolder, 'test_datasets')
+        testDf = pd.read_csv(os.path.join(path, dataset+'.csv'))
 
-    if train:
-        testData = generateFastTextData_Spacy(trainDf, nlp, textVariable = 'text')
-        testDataset = Dataset(trainDf, testData)
-        testDf = trainDf
-    else:
-        testData = generateFastTextData_Spacy(testDf, nlp, textVariable = 'text')
-        testDataset = Dataset(testDf, testData)
+    testData = generateFastTextData_Spacy(testDf, nlp, textVariable = 'text')
+    testDataset = Dataset(testDf, testData)
         
     testLoader = torch.utils.data.DataLoader(testDataset, batch_size=5, 
                                               shuffle=False, num_workers=1)

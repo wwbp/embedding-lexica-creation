@@ -1,13 +1,13 @@
 import argparse
 import logging
 import random
+import os
 
 import numpy as np
 import pandas as pd
 import spacy
 
 from utils import *
-from preprocessing.preprocess import *
 
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(name)s - %(message)s", datefmt="%m/%d/%Y %H:%M:%S",
@@ -21,12 +21,13 @@ np.random.seed(42)
 
 def train_generate(lexiconDataset, nlp):
     logger.info("Start Training {}".format(lexiconDataset))
-    trainDf, _, _ = splitData(getData(args.dataFolder, lexiconDataset))
+    path = os.path.join(args.dataFolder, lexiconDataset)
+    trainDf = pd.read_csv(os.path.join(path, 'train.csv'))
     trainData = generateFastTextData_Spacy(trainDf, nlp, textVariable = "text")
 
     model = trainSVM(trainData, trainDf)
 
-    lexiconDf = generateLexicon_SVM(model,trainDf, nlp)
+    lexiconDf = generateLexicon_SVM(model, trainDf, nlp)
 
     return model, lexiconDf
 
@@ -44,7 +45,7 @@ if __name__ == "__main__":
     nlp = spacy.load("./fasttext")
 
     ## Dataset that will be used for creating the lexicon
-    lexiconDataset1 = ["nrc_joy", "yelp_subset","amazon_finefood_subset","amazon_toys_subset","empathy"]
+    lexiconDataset1 = ["nrc_joy", "yelp_subset","amazon_finefood_subset","amazon_toys_subset"]
     lexiconDataset2 = ["surprise", "sadness", "fear", "anger"]
 
     dataList1 = ["song_joy", "dialog_joy", "friends_joy", "emobank"]
@@ -55,7 +56,7 @@ if __name__ == "__main__":
     for lexica in lexiconDataset1:
         model, lexiconDf = train_generate(lexica, nlp)
         outfilename = f"{args.output_dir}/{lexica}_svm_feature.csv"
-        lexiconDf.to_csv(outfilename, index = False, index_label = False)
+        lexiconDf.to_csv(outfilename)
 
         lexiconWords, lexiconMap = getLexicon(df = lexiconDf)
         

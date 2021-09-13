@@ -9,11 +9,7 @@ import pandas as pd
 import torch
 import spacy
 
-from utils import generateFastTextData_Spacy, Dataset, trainFFN
-from preprocessing.preprocess import getData, splitData
-from generation.feature import feature
-from generation.partition import partition
-from generation.deep import deep
+from utils import generateFastTextData_Spacy, Dataset, trainFFN, NNNet, generateLexicon_FFN, getLexicon, testFFN
 
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(name)s - %(message)s", datefmt="%m/%d/%Y %H:%M:%S",
@@ -32,18 +28,10 @@ def parse():
 
     parser.add_argument("--dataFolder", required=True, type=str, help="The input data dir.")
     parser.add_argument(
-        "--output_dir", required=True, type=str, 
+        "--model_dir", required=True, type=str, 
         help="The output directory where the model checkpoints will be written.")
-    parser.add_argument(
-        "--task", required=True, type=str, 
-        help="Choose whether to train the model or to generate lexicon.")
-    parser.add_argument(
-        "--method", type=str, help="Choose the method for lexicon generation."
-    )
-    parser.add_argument("--model_dir", type=str, help="The dir to the FFN model.")
-    parser.add_argument("--masker", type=str, help="The masker used by partition shap.")
-    parser.add_argument(
-        "--background_size", default=100, type=int, help="Background size for Partition Masker and DeepShap.")
+    parser.add_argument("--lexicon_dir", type=str, help="The dir to the FFN model.")
+    parser.add_argument("--train_model", type=bool, action="store_true", help="Train new FFN models or not.")
 
     args = parser.parse_args()
 
@@ -51,28 +39,66 @@ def parse():
 
 
 def train(dataset:str, nlp, args, device)-> None:
-    logger.info("Start Training {}".format(dataset))
+    model_dir = args.model_dir
+    output = os.path.join(model_dir,dataset+".bin")
 
-    trainDf, devDf, _ = splitData(getData(args.dataFolder, dataset))
-    trainData = generateFastTextData_Spacy(trainDf, nlp, textVariable = "text")
-    devData = generateFastTextData_Spacy(devDf, nlp, textVariable = "text")
+    if args.train_model:
+        logger.info("Start Training {}".format(dataset))
 
-    trainDataset = Dataset(trainDf, trainData)
-    devDataset = Dataset(devDf, devData)
+        path = os.path.join(args.dataFolder, dataset)
+        trainDf = pd.read_csv(os.path.join(path, 'train.csv'))
+        devDf = pd.read_csv(os.path.join(path, 'dev.csv'))
 
-    NNnet = trainFFN(trainDataset, devDataset, max_epochs = 100, device=device)
+        trainData = generateFastTextData_Spacy(trainDf, nlp, textVariable = "text")
+        devData = generateFastTextData_Spacy(devDf, nlp, textVariable = "text")
 
-    #Save the model
-    output_dir = args.output_dir
+        trainDataset = Dataset(trainDf, trainData)
+        devDataset = Dataset(devDf, devData)
 
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+        NNnet = trainFFN(trainDataset, devDataset, max_epochs = 100, device=device)
 
-    output = os.path.join(args.output_dir,dataset+".bin")
+        #Save the model
+        if not os.path.exists(model_dir):
+            os.makedirs(model_dir)
+            
+        logger.info("Saving model to %s" % output)
+        torch.save(NNnet.state_dict(), output)
+    else:
+        NNnet = NNNet()
+        NNnet.load_state_dict(torch.load(output))
+
+    return NNnet
         
-    logger.info("Saving model to %s" % output)
-    torch.save(NNnet.state_dict(), output)
-        
+
+def generate(train:str, test:List[str], nlp, args, device, model=None)->List[List[Union[str, float]]]:
+    logger.info("Generating lexicon for {}".format(train))
+    result = []
+
+    if model is None:
+        NNnet = NNNet()
+        NNnet.load_state_dict(torch.load(args.model_dir+"/"+train+".bin"))
+    else:
+        NNnet = model
+    path = os.path.join(args.dataFolder, train)
+    trainDf = pd.read_csv(os.path.join(path, 'train.csv'))
+    outfilename = f"{args.lexicon_dir}/{train}_ffn_feature.csv"
+    
+    if os.path.exists(outfilename):
+        logger.info("File already exists, skipped!")
+        lexicon = pd.read_csv(outfilename)
+    else:
+        lexicon = generateLexicon_FFN(NNnet,trainDf,nlp,device=device)
+        lexicon.to_csv(outfilename)
+    lexiconWords, lexiconMap = getLexicon(df = lexicon)
+    
+    logger.info("Running evaluation.")
+    for dataset in test:
+        result.append([train] + testFFN(
+            NNnet, dataset, lexiconWords, lexiconMap, nlp, args.dataFolder, device))
+
+    logger.info("Done!")
+    return result
+
 
 def main()-> None:
     args = parse()
@@ -80,7 +106,7 @@ def main()-> None:
     nlp = spacy.load("./fasttext")
 
     ## Dataset that will be used for creating the lexicon
-    train_data1 = ["nrc_joy", "yelp_subset","amazon_finefood_subset","amazon_toys_subset","empathy"]
+    train_data1 = ["nrc_joy", "yelp_subset","amazon_finefood_subset","amazon_toys_subset",]
     train_data2 = ["surprise", "sadness", "fear", "anger"]
 
     test_data1 = train_data1+["song_joy", "dialog_joy", "friends_joy", "emobank"]
@@ -95,38 +121,15 @@ def main()-> None:
         logger.info("No GPU available, using the CPU instead.")
         device = torch.device("cpu")
 
-    if args.task == "train":
-        for data in train_data1:
-            train(data, nlp, args, device)
-        for data in train_data2:
-            train("nrc_"+data, nlp, args, device)
-    elif args.task == "generate":
-        assert args.method is not None
-        assert args.model_dir is not None
-        
-        results = []
-        if args.method == "feature":
-            for data in train_data1:
-                results += feature(data, test_data1, nlp, args, device)
-            for data in train_data2:
-                results += feature(
-                    "nrc_"+data, [i+"_"+data for i in test_data2], nlp, args, device)
-        elif args.method == "deep":
-            for data in train_data1:
-                results += deep(data, test_data1, nlp, args, device)
-            for data in train_data2:
-                results += deep(
-                    "nrc_"+data, [i+"_"+data for i in test_data2], nlp, args, device)
-        elif args.method == "partition":
-            assert args.masker is not None
-            for data in train_data1:
-                results += partition(data, test_data1, nlp, args, device)
-            for data in train_data2:
-                results += partition(
-                    "nrc_"+data, [i+"_"+data for i in test_data2], nlp, args, device)
-        else:
-            logger.error("{} is not a valid method!".format(args.method))
-        
+    results = []
+    for data in train_data1:
+        model = train(data, nlp, args, device)
+        results += generate(data, test_data1, nlp, args, device, model)
+    for data in train_data2:
+        model = train("nrc_"+data, nlp, args, device)
+        results += generate(
+                "nrc_"+data, [i+"_"+data for i in test_data2], nlp, args, device, model)
+         
         results = pd.DataFrame(results)
         results.columns = ["TrainData","TestData","modelAcc", "modelF1", "lexiconAcc", "lexiconF1"]
         results.to_csv("Results_{}.csv".format(args.method),index = False, index_label = False)
