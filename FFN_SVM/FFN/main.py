@@ -31,7 +31,7 @@ def parse():
         "--model_dir", required=True, type=str, 
         help="The output directory where the model checkpoints will be written.")
     parser.add_argument("--lexicon_dir", type=str, help="The dir to the FFN model.")
-    parser.add_argument("--train_model", type=bool, action="store_true", help="Train new FFN models or not.")
+    parser.add_argument("--train_model", action="store_true", help="Train new FFN models or not.")
 
     args = parser.parse_args()
 
@@ -81,6 +81,10 @@ def generate(train:str, test:List[str], nlp, args, device, model=None)->List[Lis
         NNnet = model
     path = os.path.join(args.dataFolder, train)
     trainDf = pd.read_csv(os.path.join(path, 'train.csv'))
+
+    if not os.path.exists(args.lexicon_dir):
+        os.makedirs(args.lexicon_dir)
+
     outfilename = f"{args.lexicon_dir}/{train}_ffn_feature.csv"
     
     if os.path.exists(outfilename):
@@ -130,11 +134,9 @@ def main()-> None:
         results += generate(
                 "nrc_"+data, [i+"_"+data for i in test_data2], nlp, args, device, model)
          
-        results = pd.DataFrame(results)
-        results.columns = ["TrainData","TestData","modelAcc", "modelF1", "lexiconAcc", "lexiconF1"]
-        results.to_csv("Results_{}.csv".format(args.method),index = False, index_label = False)
-    else:
-        logger.error("Wrong task!!!")
+    results = pd.DataFrame(results)
+    results.columns = ["TrainData","TestData","modelAcc", "modelF1", "lexiconAcc", "lexiconF1"]
+    results.to_csv("Results_FFN.csv",index = False, index_label = False)
 
 
 if __name__ == "__main__":

@@ -272,10 +272,11 @@ def testSVM( model, dataset, lexiconWords, lexiconMap, nlp, dataFolder):
 ###########################
 
 
-def testModel_FFN(net, testLoader, device='cuda:0'):
+def testModel_FFN(net, testLoader, returnScore=False, device='cuda:0'):
     net.eval()
     net.to(device)
 
+    preds = []
     targets = []
     scores = []
 
@@ -288,17 +289,22 @@ def testModel_FFN(net, testLoader, device='cuda:0'):
             
             scores.append(nn.Softmax()(output)[:,1].cpu().numpy())
 
-            targets.append( target.cpu().numpy() )
+            preds += np.argmax(output.cpu().numpy(),1).tolist()
+
+            targets.append(target.cpu().numpy())
 
     target = np.concatenate(targets)
     scores = np.concatenate(scores)
-    scores = scores.reshape(-1, 1)
-
-    logModel = LogisticRegression()
-    modelAcc = np.round(np.mean(cross_val_score(logModel, scores, target, cv=5, scoring='accuracy')),3)
-    modelF1 = np.round(np.mean(cross_val_score(logModel, scores, target, cv=5, scoring='f1')),3)
-
-    return modelAcc, modelF1
+    
+    acc = accuracy_score(preds, target)
+    f1 = f1_score(preds, target)
+    
+    net.train()
+    
+    if returnScore:
+        return acc, f1, scores
+    else:
+        return acc, f1
     
     
 def getWordPred_FFN(NNnet, trainDf, nlp, device = 'cuda:0' ):
@@ -414,7 +420,7 @@ def testFFN( NNnet, dataset, lexiconWords, lexiconMap, nlp, dataFolder, device):
     testLoader = torch.utils.data.DataLoader(testDataset, batch_size=5, 
                                               shuffle=False, num_workers=1)
     
-    modelAcc, modelF1, scores = testModel_FFN(NNnet, testLoader, returnScore = True, device=device)
+    modelAcc, modelF1, scores = testModel_FFN(NNnet, testLoader, returnScore=True, device=device)
     
     X = scores.reshape(-1,1)
     y = testDf.label.values
