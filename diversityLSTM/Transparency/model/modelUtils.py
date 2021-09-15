@@ -47,7 +47,7 @@ class BatchHolder() :
         else:
             self.seq = torch.LongTensor(np.array(expanded, dtype='float64')).to(device)
 
-        self.masks = torch.ByteTensor(np.array(masks)).to(device)
+        self.masks = torch.BoolTensor(np.array(masks)).to(device)
 
         self.hidden = None
         self.predict = None

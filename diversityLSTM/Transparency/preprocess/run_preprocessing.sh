@@ -13,8 +13,6 @@ python $LSTM/preprocess/preprocess_data_BC.py --data_file $LSTM/preprocess/ourDa
 
 python $LSTM/preprocess/preprocess_data_BC.py --data_file $LSTM/preprocess/ourData/nrc_fear_dataset.csv --tokenizer_file fasttext --output_file $LSTM/preprocess/ourData/vec_nrc_fear.p --min_df 0
 
-python $LSTM/preprocess/preprocess_data_BC.py --data_file $LSTM/preprocess/ourData/empathy_dataset.csv --tokenizer_file fasttext --output_file $LSTM/preprocess/ourData/vec_empathy.p --min_df 0
-
 python $LSTM/preprocess/preprocess_data_BC.py --data_file $LSTM/preprocess/ourData/amazon_toys_subset_dataset.csv --tokenizer_file fasttext --output_file $LSTM/preprocess/ourData/vec_amazon_toys_subset.p --min_df 0
 
 python $LSTM/preprocess/preprocess_data_BC.py --data_file $LSTM/preprocess/ourData/amazon_finefood_subset_dataset.csv --tokenizer_file fasttext --output_file $LSTM/preprocess/ourData/vec_amazon_finefood_subset.p --min_df 0

@@ -48,10 +48,10 @@ def run_evaluator_on_latest_model(dataset, config='lstm', args=None) :
     # _ = evaluator.evaluate(dataset.test_data, save_results=True)
 
     # #Yilin
-    train_dataset_list = ['nrc_joy','nrc_anger','nrc_sadness','nrc_surprise','nrc_fear','empathy','amazon_toys_subset','amazon_finefood_subset','yelp_subset']
+    train_dataset_list = ['nrc_joy','nrc_anger','nrc_sadness','nrc_surprise','nrc_fear','amazon_toys_subset','amazon_finefood_subset','yelp_subset']
     # external_dataset_list = ['friends_joy','friends_anger','friends_sadness','friends_surprise','friends_fear','dialog_joy','dialog_anger','dialog_sadness','dialog_surprise','dialog_fear','song_joy','song_anger','song_sadness','song_surprise','song_fear','emobank']
-    posneg_train_list = ['nrc_joy','empathy','amazon_toys_subset','amazon_finefood_subset','yelp_subset']
-    posneg_eval_list = ['nrc_joy','friends_joy','song_joy','dialog_joy','emobank','empathy','amazon_toys_subset','amazon_finefood_subset','yelp_subset']
+    posneg_train_list = ['nrc_joy','amazon_toys_subset','amazon_finefood_subset','yelp_subset']
+    posneg_eval_list = ['nrc_joy','friends_joy','song_joy','dialog_joy','emobank','amazon_toys_subset','amazon_finefood_subset','yelp_subset']
     if dataset.name in posneg_train_list:
         for eval_dataset_name in posneg_eval_list:
             eval_dataset = datasets[eval_dataset_name](args)
