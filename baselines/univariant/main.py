@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import spacy
 
-from utils import generateLexicon_uni
+from utils import generateLexicon_Uni, getLexicon, testUni
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(name)s - %(message)s", datefmt="%m/%d/%Y %H:%M:%S",
                     level=logging.INFO)
@@ -46,9 +46,18 @@ def generate(train:str, test:List[str], nlp, args):
         logger.info("File already exists, skipped!")
         lexicon = pd.read_csv(outfilename)
     else:
-        lexicon = generateLexicon_uni(trainDf,nlp)
+        lexicon = generateLexicon_Uni(trainDf,nlp)
         lexicon.to_csv(outfilename)
 
+    lexiconWords, lexiconMap = getLexicon(df = lexicon)
+
+    logger.info("Running evaluation.")
+    for dataset in test:
+        result.append([train] + testUni(
+            dataset, lexiconWords, lexiconMap, nlp, args.dataFolder))
+
+    logger.info("Done!")
+    return result
 
 
 def main():

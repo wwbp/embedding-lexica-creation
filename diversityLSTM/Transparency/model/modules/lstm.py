@@ -73,7 +73,7 @@ class LSTM(nn.Module):
                 device = input_.get_device()
                 length = length.cuda(device)
                 hx = (Variable(nn.init.xavier_uniform_(torch.empty(self.num_layers, batch_size, self.hidden_size,device=device))),
-                  Variable(nn.init.xavier_uniform_(torch.empqty(self.num_layers, batch_size, self.hidden_size,device=device))))
+                  Variable(nn.init.xavier_uniform_(torch.empty(self.num_layers, batch_size, self.hidden_size,device=device))))
             else:
 
                 hx = (Variable(nn.init.xavier_uniform_(torch.empty(self.num_layers, batch_size, self.hidden_size))),

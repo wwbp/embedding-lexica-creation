@@ -6,6 +6,7 @@ import os
 
 import pandas as pd
 import numpy as np
+from scipy import stats
 
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import cross_val_score
@@ -436,12 +437,13 @@ def testFFN( NNnet, dataset, lexiconWords, lexiconMap, nlp, dataFolder, device):
     return [dataset, modelAcc, modelF1, lexAcc, lexF1]
 
 
-def generateLexicon_uni(trainDf, nlp):
+def generateLexicon_Uni(trainDf, nlp):
     data = trainDf
         
     wordCount = getWordCount(data, nlp)
-
     tokenList = {}
+    for word in wordCount["Word"]:
+        tokenList[word] = [[], []]
 
     for i in range(len(data)):
 
@@ -456,18 +458,37 @@ def generateLexicon_uni(trainDf, nlp):
             else:
                 tokens[text] += 1
 
-        for token in tokens:
-            if token not in tokenList:
-                tokenList[token] = [[tokens[token]/total], [data.iloc[i]['label']]]
-            else:
+        for token in tokenList:
+            if token in tokens:
                 tokenList[token][0].append(tokens[token]/total)
                 tokenList[token][1].append(data.iloc[i]['label'])
+            else:
+                tokenList[token][0].append(0)
+                tokenList[token][1].append(data.iloc[i]['label'])
 
-    wordList = []
-    score = []
+    tokenScore = {}
 
     for token in tokenList:
-        wordList.append(token)
-        score = 
+        tokenScore[token] = stats.pearsonr(tokenList[token][0], tokenList[token][1])[0]
 
+    df_score = pd.DataFrame.from_dict(tokenScore, orient='index', columns=['Score'])
+    df_freq = wordCount.set_index('Word')
+    df = df_score.merge(df_freq, left_index=True, right_index=True, how='inner')
+
+    return df
+
+
+def testUni(dataset, lexiconWords, lexiconMap, nlp, dataFolder):
+    if ('dialog' not in dataset) and ('song' not in dataset) and ('friends' not in dataset) and ('emobank' not in dataset):
+        path = os.path.join(dataFolder, dataset)
+        testDf = pd.read_csv(os.path.join(path, 'test.csv'))
+    else:
+        path = os.path.join(dataFolder, 'test_datasets')
+        testDf = pd.read_csv(os.path.join(path, dataset+'.csv'))
+
+    lexAcc, lexF1 = evaluateLexicon(testDf, lexiconWords, lexiconMap, nlp, returnScores = True)
     
+    logger.info(f"{dataset} , {lexAcc} , {lexF1}")
+    
+    return [dataset, lexAcc, lexF1]
+
