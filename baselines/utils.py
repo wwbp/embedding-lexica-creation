@@ -14,7 +14,6 @@ from sklearn.svm import LinearSVC
 import torch
 import torch.nn.functional as F
 from torch import nn
-import shap
 
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S',
@@ -435,4 +434,40 @@ def testFFN( NNnet, dataset, lexiconWords, lexiconMap, nlp, dataFolder, device):
     logger.info(f"{dataset} , {modelAcc} , {modelF1} , {lexAcc} , {lexF1}")
     
     return [dataset, modelAcc, modelF1, lexAcc, lexF1]
+
+
+def generateLexicon_uni(trainDf, nlp):
+    data = trainDf
+        
+    wordCount = getWordCount(data, nlp)
+
+    tokenList = {}
+
+    for i in range(len(data)):
+
+        tokens = {}
+        doc = nlp(data.iloc[i]['text'].lower())
+        total = 0
+        for token in doc:
+            total += 1
+            text = token.text
+            if text not in tokens:
+                tokens[text] = 1
+            else:
+                tokens[text] += 1
+
+        for token in tokens:
+            if token not in tokenList:
+                tokenList[token] = [[tokens[token]/total], [data.iloc[i]['label']]]
+            else:
+                tokenList[token][0].append(tokens[token]/total)
+                tokenList[token][1].append(data.iloc[i]['label'])
+
+    wordList = []
+    score = []
+
+    for token in tokenList:
+        wordList.append(token)
+        score = 
+
     

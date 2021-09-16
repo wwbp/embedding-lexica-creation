@@ -536,6 +536,7 @@ class Model() :
             batch_data.predict = torch.sigmoid(batch_data.predict)
             attn = batch_data.attn
             predict = batch_data.predict.cpu().data.numpy()
+            word2freq = {}
 
             for idx in range(len(batch_doc)):
 
@@ -544,6 +545,11 @@ class Model() :
                 seq = batch_data.seq[idx][1:L-1].cpu().data.numpy()
                 words = dataset.vec.map2words(seq)
                 words = [word if word != "" else "'<UNK>'" for word in words if word]
+                for word in set(words):
+                    if word not in word2freq:
+                        word2freq[word] = 1
+                    else:
+                        word2freq[word] += 1
                 words_pos = [word if word != "qqq" else "0.0" for word in words]
 
 #                 tags = nltk.tag.pos_tag(words_pos)
@@ -630,14 +636,16 @@ class Model() :
         import pandas as pd
         df_pos = pd.DataFrame.from_dict(word_attn_positive, orient='index', columns=['pos_count', 'pos_sum_score', 'pos_ave_score'])
         df_neg = pd.DataFrame.from_dict(word_attn_negative, orient='index', columns=['neg_count', 'neg_sum_score', 'neg_ave_score'])
+        df_freq = pd.DataFrame.from_dict(word2freq,orient='index', columns=['freq'] )
         df = df_pos.merge(df_neg, left_index=True, right_index=True,how='inner')
+        df = df.merge(df_freq, left_index=True, right_index=True,how='inner')
         df.insert(0, 'sum_score', df['pos_sum_score'] - df['neg_sum_score'])
         df.insert(0, 'word_count', df['pos_count']+df['neg_count'])
         df.insert(0, 'score', df['sum_score']/(df['word_count']))
         df.reset_index(inplace=True)
         df.rename(columns={'index':'word'},inplace=True)
         df.sort_values('score', ascending=False, inplace=True)
-        df_lexica = df.filter(['word','score','word_count'], axis = 1)
+        df_lexica = df.filter(['word','score','freq'], axis = 1)
         df_lexica.dropna(inplace=True)
         filename = dataset.name + '_lstm_attention.csv'
         df_lexica.to_csv("diversityLSTM/Transparency/lexica/"+filename, sep=',',index=False)
