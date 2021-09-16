@@ -1,5 +1,5 @@
 export PYTHONPATH=$PYTHONPATH:$(pwd)
-export PYTHONPATH=$PYTHONPATH:$(pwd)/FFN_SVM
+export PYTHONPATH=$PYTHONPATH:$(pwd)/baselines
 
 python baselines/FFN/main.py \
     --dataFolder=data \

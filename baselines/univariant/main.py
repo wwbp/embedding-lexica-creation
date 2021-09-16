@@ -40,7 +40,7 @@ def generate(train:str, test:List[str], nlp, args):
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
 
-    outfilename = f"{args.lexicon_dir}/{train}_uni.csv"
+    outfilename = f"{args.output_dir}/{train}_uni.csv"
     
     if os.path.exists(outfilename):
         logger.info("File already exists, skipped!")
@@ -82,3 +82,7 @@ def main():
     results = pd.DataFrame(results)
     results.columns = ["TrainData","TestData","modelAcc", "modelF1", "lexiconAcc", "lexiconF1"]
     results.to_csv("Results_uni.csv",index = False, index_label = False)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,5 +1,5 @@
 export PYTHONPATH=$PYTHONPATH:$(pwd)
-export PYTHONPATH=$PYTHONPATH:$(pwd)/FFN_SVM
+export PYTHONPATH=$PYTHONPATH:$(pwd)/baselines
 
 #Set up model kind, data folder and output folder here.
 python baselines/univariant/main.py \

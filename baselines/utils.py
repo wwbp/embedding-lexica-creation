@@ -443,9 +443,9 @@ def generateLexicon_Uni(trainDf, nlp):
     wordCount = getWordCount(data, nlp)
     tokenList = {}
     for word in wordCount["Word"]:
-        tokenList[word] = [[], []]
+        tokenList[word] = [0 for _ in range(len(data))]
 
-    for i in range(len(data)):
+    for i in tqdm(range(len(data))):
 
         tokens = {}
         doc = nlp(data.iloc[i]['text'].lower())
@@ -458,18 +458,13 @@ def generateLexicon_Uni(trainDf, nlp):
             else:
                 tokens[text] += 1
 
-        for token in tokenList:
-            if token in tokens:
-                tokenList[token][0].append(tokens[token]/total)
-                tokenList[token][1].append(data.iloc[i]['label'])
-            else:
-                tokenList[token][0].append(0)
-                tokenList[token][1].append(data.iloc[i]['label'])
+        for token in tokens:
+            tokenList[token][i] = tokens[token]/total
 
     tokenScore = {}
 
     for token in tokenList:
-        tokenScore[token] = stats.pearsonr(tokenList[token][0], tokenList[token][1])[0]
+        tokenScore[token] = stats.pearsonr(tokenList[token], data.iloc[i]['label'])[0]
 
     df_score = pd.DataFrame.from_dict(tokenScore, orient='index', columns=['Score'])
     df_freq = wordCount.set_index('Word')
