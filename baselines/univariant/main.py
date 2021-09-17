@@ -80,7 +80,7 @@ def main():
                 "nrc_"+data, [i+"_"+data for i in test_data2], nlp, args)
          
     results = pd.DataFrame(results)
-    results.columns = ["TrainData","TestData","modelAcc", "modelF1", "lexiconAcc", "lexiconF1"]
+    results.columns = ["TrainData","TestData","lexiconAcc", "lexiconF1"]
     results.to_csv("Results_uni.csv",index = False, index_label = False)
 
 

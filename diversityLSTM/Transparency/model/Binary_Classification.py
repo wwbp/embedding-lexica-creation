@@ -512,6 +512,7 @@ class Model() :
                     
         word_attn_positive = {}
         word_attn_negative = {}
+        word2freq = {}
         # pos_tag_dict = {}
         # tags of words
         word_tag = {}
@@ -536,7 +537,6 @@ class Model() :
             batch_data.predict = torch.sigmoid(batch_data.predict)
             attn = batch_data.attn
             predict = batch_data.predict.cpu().data.numpy()
-            word2freq = {}
 
             for idx in range(len(batch_doc)):
 

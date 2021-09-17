@@ -464,11 +464,10 @@ def generateLexicon_Uni(trainDf, nlp):
     tokenScore = {}
 
     for token in tokenList:
-        tokenScore[token] = stats.pearsonr(tokenList[token], data.iloc[i]['label'])[0]
+        tokenScore[token] = stats.pearsonr(tokenList[token], data['label'])[0]
 
-    df_score = pd.DataFrame.from_dict(tokenScore, orient='index', columns=['Score'])
-    df_freq = wordCount.set_index('Word')
-    df = df_score.merge(df_freq, left_index=True, right_index=True, how='inner')
+    df_score = pd.DataFrame.from_dict(tokenScore, orient='index', columns=['Value']).rename_axis('Word').reset_index()
+    df = df_score.merge(wordCount, how='inner', on='Word')
 
     return df
 
