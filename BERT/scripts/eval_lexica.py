@@ -1,14 +1,15 @@
+import os
+from tqdm import tqdm
+import random
+
 import pandas as pd
 import numpy as np
-import random
-from tqdm import tqdm
+from sklearn.model_selection import cross_val_score
+from sklearn.linear_model import LogisticRegression
 
 import torch
 import spacy
 
-from sklearn.metrics import accuracy_score, f1_score
-from sklearn.model_selection import cross_val_score
-from sklearn.linear_model import LogisticRegression
 
 def getLexicon(lexicon):
 
@@ -68,34 +69,58 @@ def evaluateLexicon(testDf, lexicon, tokenizer, task='classification'):
     ### Computing Metrics
     acc = np.round(np.mean(cross_val_score(model, X, y, cv=5, scoring='accuracy')),3)
     f1 = np.round(np.mean(cross_val_score(model, X, y, cv=5, scoring='f1')),3)
-    if task == 'classification':
-        precision = np.round(np.mean(cross_val_score(model, X, y, cv=5, scoring='average_precision')),3)
-        auc = np.round(np.mean(cross_val_score(model, X, y, cv=5, scoring='roc_auc')),3)
-    elif task == 'regression':
-        precision = np.round(np.mean(cross_val_score(model, X, y, cv=5, scoring='precision_micro')),3)
-        auc = np.nan
         
-    print(acc, f1)
-    #return acc, f1
+    return [acc, f1]
 
 
-random.seed(42)
-np.random.seed(42)
-torch.manual_seed(42)
-torch.cuda.manual_seed(42)
+def main() -> None:
+    random.seed(42)
+    np.random.seed(42)
+    torch.manual_seed(42)
+    torch.cuda.manual_seed(42)
 
-result = []
-for i in ['nrc_joy', 'yelp_subset', 'empathy', 'amazon_finefood_subset', 'amazon_toys_subset',]:
-#for i in ['nrc_joy']:
-    for j in ['song_joy','emobank_V', 'dialog_joy', 'amazon_finefood_subset', 'yelp_subset', 'empathy', 'nrc_joy', 'amazon_toys_subset', 'friends_joy']:
-        print(i,j)
-        lexicon = pd.read_csv("empathy_dictionary/lexica/DistilBERT_Partition/"+i+"_distilbert_classification_ps.csv")
-        df = getData("Raw", j, "classification")
-        if j in ['yelp_subset', 'empathy', 'amazon_finefood_subset', 'amazon_toys_subset', ] + ['nrc_joy']:
-            _, _, df = splitData(df, True)
-        else:
-            df = balanceData(df)
-        evaluateLexicon(df, lexicon, tokenizer)
-        #acc, f1 = evaluateLexicon(df, lexicon, tokenizer)
-        #result.append([i,j, acc, f1])
-#pd.DataFrame(result).to_csv("result.csv")
+    tokenizer = spacy.load("/home/ztwu/embedding-lexica-creation/fasttext")
+
+    lexFolder = '/home/ztwu/embedding-lexica-creation/lexica/'
+    dataFolder = '/home/zwu49/ztwu/masker/shap_maskers/cleandata'
+    methods = {'DistilBERT_Mask':'distilbert_classification_mask',
+               'DistilBERT_Partition':'distilbert_classification_ps', 
+               'Roberta_Mask':'roberta_classification_mask', 
+               'Roberta_Partition':'roberta_classification_ps'}
+    train_data1 = ["nrc_joy", "yelp_subset","amazon_finefood_subset","amazon_toys_subset",]
+    train_data2 = ["surprise", "sadness", "fear", "anger"]
+
+    test_data1 = train_data1+["song_joy", "dialog_joy", "friends_joy", "emobank"]
+    test_data2 = ["nrc","song","dialog","friends"]
+
+    results = [] 
+    for method in methods:
+        for i in train_data1:
+            for j in test_data1:
+                lexicon = pd.read_csv(lexFolder+method+'/'+i+'_'+methods[method]+'.csv')
+                if ('dialog' not in j) and ('song' not in j) and ('friends' not in j) and ('emobank' not in j):
+                    path = os.path.join(dataFolder, j)
+                    df = pd.read_csv(os.path.join(path, 'test.csv'))
+                else:
+                    path = os.path.join(dataFolder, 'test_datasets')
+                    df = pd.read_csv(os.path.join(path, j+'.csv'))
+                results.append([method, i, j]+evaluateLexicon(df, lexicon, tokenizer))
+        
+        for i in train_data2:
+            for j in test_data2:
+                lexicon = pd.read_csv(lexFolder+method+'/'+'nrc_'+i+'_'+methods[method]+'.csv')
+                if j == 'nrc':
+                    path = os.path.join(dataFolder, j+'_'+i)
+                    df = pd.read_csv(os.path.join(path, 'test.csv'))
+                else:
+                    path = os.path.join(dataFolder, 'test_datasets')
+                    df = pd.read_csv(os.path.join(path, j+'_'+i+'.csv'))
+                results.append([method, 'nrc_'+i, j+'_'+i]+evaluateLexicon(df, lexicon, tokenizer))
+    
+    results = pd.DataFrame(results)
+    results.columns = ["Method","TrainData","TestData","lexiconAcc", "lexiconF1"]
+    results.to_csv("Results_BERT.csv",index = False, index_label = False)
+
+
+if __name__ == "__main__":
+    main()
