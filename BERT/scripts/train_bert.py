@@ -34,7 +34,6 @@ def parse():
     parser.add_argument("--task", required=True, type=str, help="Classification or regression.")
     parser.add_argument("--do_train", action="store_true", help="Whether to run training.")
     parser.add_argument("--do_predict", action="store_true", help="Whether to run prediction.")
-    parser.add_argument("--test_set", action="store_true", help="Whether pick test set from the whole data.")
     
     parser.add_argument("--model_kind", required=True, type=str, help="Bert or distilBert.")
     parser.add_argument("--model", required=True, type=str, help="The pretrained Bert model we choose.")
@@ -311,15 +310,14 @@ def run_train(tokenizer, model, device: torch.device, args):
             break
 
 
-def run_predict(tokenizer, model, device: torch.device, args):
+def run_predict(model, device: torch.device, args):
     
-    df = getData(args.dataFolder, args.dataset, args.task)
-    if args.test_set:
-        _, _, df = splitData(df, True)
+    if ('dialog' not in args.dataset) and ('song' not in args.dataset) and ('friends' not in args.dataset) and ('emobank' not in args.dataset):
+        path = os.path.join(args.dataFolder, args.dataset)
+        dataset = pd.read_csv(os.path.join(path, 'test.csv'))
     else:
-        df = balanceData(df)
-    
-    dataset = prepare_data(df, tokenizer, args.max_seq_length, args.task)
+        path = os.path.join(args.dataFolder, 'test_datasets')
+        dataset = pd.read_csv(os.path.join(path, args.dataset+'.csv'))
 
     prediction_dataloader = DataLoader(
         dataset, sampler = SequentialSampler(dataset), 
@@ -354,8 +352,6 @@ def run_predict(tokenizer, model, device: torch.device, args):
         
     score = np.concatenate(score)
     label = np.concatenate(label)
-    logger.info(score.shape)
-    logger.info(label.shape)
     score = score.reshape(-1,1)
     
     logModel = LogisticRegression()

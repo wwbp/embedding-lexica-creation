@@ -44,9 +44,7 @@ task evalOnBert : rg : data
     --model=$model \
     --do_lower_case \
     --max_seq_length=$max_seq_length \
-    --predict_batch_size=$train_batch_size \
-    --test_set
-    
+    --predict_batch_size=$train_batch_size
 }
 
 plan train {
@@ -56,28 +54,15 @@ plan train {
   * (task: classification) * (max_seq_length: 128) * (train_batch_size: 32) * (model_kind: distilbert) * (pretrained: distilbert-base-uncased)
 }
 
-plan eval_test {
-  reach evalOnBert via (train_data: nrc_joy amazon_finefood_subset amazon_toys_subset yelp_subset) * (dataset: nrc_joy yelp_subset amazon_finefood_subset amazon_toys_subset) 
+plan eval {
+  reach evalOnBert via (train_data: nrc_joy amazon_finefood_subset amazon_toys_subset yelp_subset) * (dataset: nrc_joy yelp_subset amazon_finefood_subset amazon_toys_subset song_joy emobank_V dialog_joy friends_joy) 
   * (task: classification) * (model_kind: roberta distilbert) * (max_seq_length: 128) * (train_batch_size: 32)
-  reach evalOnBert via (train_data: nrc_anger) * (dataset: nrc_anger) * (task: classification) * (model_kind: roberta distilbert)
+  reach evalOnBert via (train_data: nrc_anger) * (dataset: nrc_anger song_anger dialog_anger friends_anger) * (task: classification) * (model_kind: roberta distilbert)
   * (max_seq_length: 128) * (train_batch_size: 32)
-  reach evalOnBert via (train_data: nrc_sadness) * (dataset: nrc_sadness) * (task: classification) * (model_kind: roberta distilbert)
+  reach evalOnBert via (train_data: nrc_sadness) * (dataset: nrc_sadness song_sadness dialog_sadness friends_sadness) * (task: classification) * (model_kind: roberta distilbert)
   * (max_seq_length: 128) * (train_batch_size: 32)
-  reach evalOnBert via (train_data: nrc_fear) * (dataset: nrc_fear) * (task: classification) * (model_kind: roberta distilbert)
+  reach evalOnBert via (train_data: nrc_fear) * (dataset: nrc_fear song_fear dialog_fear friends_fear) * (task: classification) * (model_kind: roberta distilbert)
   * (max_seq_length: 128) * (train_batch_size: 32)
-  reach evalOnBert via (train_data: nrc_surprise) * (dataset: nrc_surprise) * (task: classification) * (model_kind: roberta distilbert)
-  * (max_seq_length: 128) * (train_batch_size: 32)
-}
-
-plan eval_other {
-  reach evalOnBert via (train_data: nrc_joy amazon_finefood_subset amazon_toys_subset yelp_subset) * (dataset: song_joy emobank_V dialog_joy friends_joy) 
-  * (task: classification) * (model_kind: roberta distilbert) * (max_seq_length: 128) * (train_batch_size: 32)
-  reach evalOnBert via (train_data: nrc_anger) * (dataset: song_anger dialog_anger friends_anger) * (task: classification) * (model_kind: roberta distilbert)
-  * (max_seq_length: 128) * (train_batch_size: 32)
-  reach evalOnBert via (train_data: nrc_fear) * (dataset: song_fear dialog_fear friends_fear) * (task: classification) * (model_kind: roberta distilbert)
-  * (max_seq_length: 128) * (train_batch_size: 32)
-  reach evalOnBert via (train_data: nrc_sadness) * (dataset: song_sadness dialog_sadness friends_sadness) * (task: classification) * (model_kind: roberta distilbert)
-  * (max_seq_length: 128) * (train_batch_size: 32)
-  reach evalOnBert via (train_data: nrc_surprise) * (dataset: song_surprise dialog_surprise friends_surprise) * (task: classification) * (model_kind: roberta distilbert)
+  reach evalOnBert via (train_data: nrc_surprise) * (dataset: nrc_surprise song_surprise dialog_surprise friends_surprise) * (task: classification) * (model_kind: roberta distilbert)
   * (max_seq_length: 128) * (train_batch_size: 32)
 }
