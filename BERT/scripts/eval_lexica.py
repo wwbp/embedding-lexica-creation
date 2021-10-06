@@ -7,7 +7,6 @@ import numpy as np
 from sklearn.model_selection import cross_val_score
 from sklearn.linear_model import LogisticRegression
 
-import torch
 import spacy
 
 
@@ -76,8 +75,6 @@ def evaluateLexicon(testDf, lexicon, tokenizer, task='classification'):
 def main() -> None:
     random.seed(42)
     np.random.seed(42)
-    torch.manual_seed(42)
-    torch.cuda.manual_seed(42)
 
     tokenizer = spacy.load("/home/ztwu/embedding-lexica-creation/fasttext")
 
