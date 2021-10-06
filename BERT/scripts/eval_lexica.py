@@ -1,6 +1,6 @@
 import os
-from tqdm import tqdm
 import random
+import logging
 
 import pandas as pd
 import numpy as np
@@ -8,6 +8,11 @@ from sklearn.model_selection import cross_val_score
 from sklearn.linear_model import LogisticRegression
 
 import spacy
+
+
+logging.basicConfig(format="%(asctime)s - %(levelname)s - %(name)s - %(message)s", datefmt="%m/%d/%Y %H:%M:%S",
+                    level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def getLexicon(lexicon):
@@ -45,13 +50,12 @@ def scoreText(text, lexiconWords, lexiconMap, tokenizer):
 
 def evaluateLexicon(testDf, lexicon, tokenizer, task='classification'):
     
-    print(tokenizer)
     lexiconWords, lexiconMap = getLexicon(lexicon)
     
     ### Getting lexicon scores for text
     scoreList = []
 
-    for i in tqdm(range(len(testDf))):
+    for i in range(len(testDf)):
         score = scoreText(testDf.iloc[i]['text'].lower(), lexiconWords, lexiconMap, tokenizer)
 
         scoreList.append(score)
@@ -76,10 +80,10 @@ def main() -> None:
     random.seed(42)
     np.random.seed(42)
 
-    tokenizer = spacy.load("/home/ztwu/embedding-lexica-creation/fasttext")
+    tokenizer = spacy.load("./fasttext")
 
-    lexFolder = '/home/ztwu/embedding-lexica-creation/lexica/'
-    dataFolder = '/home/zwu49/ztwu/masker/shap_maskers/cleandata'
+    lexFolder = './lexica/'
+    dataFolder = './cleandata'
     methods = {'DistilBERT_Mask':'distilbert_classification_mask',
                'DistilBERT_Partition':'distilbert_classification_ps', 
                'Roberta_Mask':'roberta_classification_mask', 
@@ -93,6 +97,7 @@ def main() -> None:
     results = [] 
     for method in methods:
         for i in train_data1:
+            logger.info('Starting evaluating {} {}'.format(method, i))
             for j in test_data1:
                 lexicon = pd.read_csv(lexFolder+method+'/'+i+'_'+methods[method]+'.csv')
                 if ('dialog' not in j) and ('song' not in j) and ('friends' not in j) and ('emobank' not in j):
@@ -104,6 +109,7 @@ def main() -> None:
                 results.append([method, i, j]+evaluateLexicon(df, lexicon, tokenizer))
         
         for i in train_data2:
+            logger.info('Starting evaluating {} {}'.format(method, i))
             for j in test_data2:
                 lexicon = pd.read_csv(lexFolder+method+'/'+'nrc_'+i+'_'+methods[method]+'.csv')
                 if j == 'nrc':

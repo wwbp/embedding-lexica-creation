@@ -54,7 +54,7 @@ plan train {
 }
 
 plan eval_roberta {
-  reach evalOnBert via (train_data: nrc_joy amazon_finefood_subset amazon_toys_subset yelp_subset) * (dataset: nrc_joy yelp_subset amazon_finefood_subset amazon_toys_subset song_joy emobank_V dialog_joy friends_joy) 
+  reach evalOnBert via (train_data: nrc_joy amazon_finefood_subset amazon_toys_subset yelp_subset) * (dataset: nrc_joy yelp_subset amazon_finefood_subset amazon_toys_subset song_joy emobank dialog_joy friends_joy) 
   * (task: classification) * (model_kind: roberta) * (max_seq_length: 128) * (train_batch_size: 32)
   reach evalOnBert via (train_data: nrc_anger) * (dataset: nrc_anger song_anger dialog_anger friends_anger) * (task: classification) * (model_kind: roberta)
   * (max_seq_length: 128) * (train_batch_size: 32)
@@ -67,7 +67,7 @@ plan eval_roberta {
 }
 
 plan eval_distil {
-  reach evalOnBert via (train_data: nrc_joy amazon_finefood_subset amazon_toys_subset yelp_subset) * (dataset: nrc_joy yelp_subset amazon_finefood_subset amazon_toys_subset song_joy emobank_V dialog_joy friends_joy) 
+  reach evalOnBert via (train_data: nrc_joy amazon_finefood_subset amazon_toys_subset yelp_subset) * (dataset: nrc_joy yelp_subset amazon_finefood_subset amazon_toys_subset song_joy emobank dialog_joy friends_joy) 
   * (task: classification) * (model_kind: distilbert) * (max_seq_length: 128) * (train_batch_size: 32)
   reach evalOnBert via (train_data: nrc_anger) * (dataset: nrc_anger song_anger dialog_anger friends_anger) * (task: classification) * (model_kind: distilbert)
   * (max_seq_length: 128) * (train_batch_size: 32)
