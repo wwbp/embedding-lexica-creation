@@ -27,7 +27,7 @@ task evalOnBert : rg : data
   :: pyenv=@ :: model=@
   :: .submitter=$grid :: .resource_flags=$gpuResourceFlags :: .action_flags=$gpuResourceFlags
 {
-  model="/home/zwu49/ztwu/embedding-lexica-creation/rerun/trainOnBert/dataset.*+max_seq_length.^+model_kind.#+pretrained.#-base+task.@+train_batch_size.!"
+  model="/home/zwu49/ztwu/embedding-lexica-creation/rerun/trainOnBert/dataset.*+max_seq_length.^+model_kind.#+pretrained.#-base+task.@+train_batch_size.!/best_model"
   model=${model//\*/$train_data}
   model=${model//^/$max_seq_length}
   model=${model//#/$model_kind}

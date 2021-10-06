@@ -16,7 +16,6 @@ from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 
 from transformers import AdamW, get_scheduler, SchedulerType
 
-from utils.preprocess import getData, splitData, balanceData
 from utils.utils import format_time, prepare_data
 
 
@@ -310,15 +309,17 @@ def run_train(tokenizer, model, device: torch.device, args):
             break
 
 
-def run_predict(model, device: torch.device, args):
+def run_predict(tokenizer, model, device: torch.device, args):
     
     if ('dialog' not in args.dataset) and ('song' not in args.dataset) and ('friends' not in args.dataset) and ('emobank' not in args.dataset):
         path = os.path.join(args.dataFolder, args.dataset)
-        dataset = pd.read_csv(os.path.join(path, 'test.csv'))
+        df = pd.read_csv(os.path.join(path, 'test.csv'))
     else:
         path = os.path.join(args.dataFolder, 'test_datasets')
-        dataset = pd.read_csv(os.path.join(path, args.dataset+'.csv'))
+        df = pd.read_csv(os.path.join(path, args.dataset+'.csv'))
 
+    dataset = prepare_data(df, tokenizer, args.max_seq_length, args.task)
+    
     prediction_dataloader = DataLoader(
         dataset, sampler = SequentialSampler(dataset), 
         batch_size = args.predict_batch_size)
