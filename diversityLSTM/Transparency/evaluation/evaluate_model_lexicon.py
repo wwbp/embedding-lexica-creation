@@ -1,19 +1,20 @@
 import pickle
 import argparse
+import os
+
 import numpy as np
-from sklearn.model_selection import cross_val_score
-from sklearn.linear_model import LogisticRegression
-import sys
-import spacy
 import pandas as pd
 
-from preprocessing.preprocess import *
+from sklearn.model_selection import cross_val_score
+from sklearn.linear_model import LogisticRegression
+import spacy
 
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument("--dataFolder", required=True, type=str, help="The input data dir.")
 args = parser.parse_args()
+
 
 def getLexicon(file=None, df = None):
     
@@ -33,6 +34,7 @@ def getLexicon(file=None, df = None):
         lexiconMap[lexicon.iloc[i]['word']] = lexicon.iloc[i]['score']
         
     return lexiconWords, lexiconMap
+
 
 def scoreText(text, lexiconWords, lexiconMap, nlp):
     
@@ -82,18 +84,20 @@ def evaluateLexicon(testDf, lexiconWords, lexiconMap, nlp, dataName=None, lexico
         return acc, f1
 
 
-
 def eval_lex(train_dataset_name, eval_dataset_name, nlp):
     path = 'diversityLSTM/Transparency/lexica/'
     filename = path + train_dataset_name + '_lstm_attention.csv'
     lexiconWords, lexiconMap = getLexicon(file = filename)
     if ('dialog' not in eval_dataset_name)and('song' not in eval_dataset_name)and('friends' not in eval_dataset_name)and('emobank' not in eval_dataset_name):
-        _, _, testDf = splitData(getData(args.dataFolder, eval_dataset_name))
+        path = os.path.join(args.dataFolder, eval_dataset_name)
+        testDf = pd.read_csv(os.path.join(path, 'test.csv'))
     else:
-        testDf = balanceData(getData(args.dataFolder, eval_dataset_name))
+        path = os.path.join(args.dataFolder, 'test_datasets')
+        testDf = pd.read_csv(os.path.join(path, eval_dataset_name+'.csv'))
 
     lexAcc, lexF1 = evaluateLexicon(testDf, lexiconWords, lexiconMap, nlp, returnScores = True)
     return lexAcc, lexF1
+
 
 def eval_model(X,y):
     ## Evaluating the 5-fold performance of the LogReg model 
@@ -104,13 +108,15 @@ def eval_model(X,y):
     # auc = np.round(np.mean(cross_val_score(logModel, X, y, cv=5, scoring='roc_auc')),3)
     return modelAcc, modelF1
 
+
 def main():
     path = 'diversityLSTM/Transparency/evaluation/model_outputs/'
-    train_dataset_list = ['nrc_joy','nrc_anger','nrc_sadness','nrc_surprise','nrc_fear','empathy','amazon_toys_subset','amazon_finefood_subset','yelp_subset']
-    posneg_train_list = ['nrc_joy','empathy','amazon_toys_subset','amazon_finefood_subset','yelp_subset']
-    posneg_eval_list = ['nrc_joy','friends_joy','song_joy','dialog_joy','emobank','empathy','amazon_toys_subset','amazon_finefood_subset','yelp_subset']
-    nlp = spacy.load('fasttext')
+    train_dataset_list = ['nrc_joy','nrc_anger','nrc_sadness','nrc_surprise','nrc_fear','amazon_toys_subset','amazon_finefood_subset','yelp_subset']
+    posneg_train_list = ['nrc_joy','amazon_toys_subset','amazon_finefood_subset','yelp_subset']
+    posneg_eval_list = ['nrc_joy','friends_joy','song_joy','dialog_joy','emobank','amazon_toys_subset','amazon_finefood_subset','yelp_subset']
+    nlp = spacy.load('./fasttext')
 
+    results = []
     for train_dataset_name in train_dataset_list:
         if train_dataset_name in posneg_train_list:
             for eval_dataset_name in posneg_eval_list:
@@ -120,6 +126,7 @@ def main():
                 lexAcc, lexF1 = eval_lex(train_dataset_name, eval_dataset_name ,nlp)
                 # print(f" {train_dataset_name}, {eval_dataset_name} , {modelAcc} , {modelF1}, {precision}, {auc}")
                 print(f" {train_dataset_name}, {eval_dataset_name} , {modelAcc} , {modelF1}, {lexAcc}, {lexF1}")
+                results.append([train_dataset_name, eval_dataset_name, modelAcc, modelF1, lexAcc, lexF1])
         else:
             emotion = train_dataset_name.split('_',1)[1]
             for eval_dataset in ['nrc_', 'song_', 'dialog_', 'friends_']:
@@ -129,6 +136,11 @@ def main():
                 modelAcc, modelF1 = eval_model(X,y)
                 lexAcc, lexF1 = eval_lex(train_dataset_name, eval_dataset_name ,nlp)
                 print(f" {train_dataset_name}, {eval_dataset_name} , {modelAcc} , {modelF1}, {lexAcc}, {lexF1}")
+                results.append([train_dataset_name, eval_dataset_name, modelAcc, modelF1, lexAcc, lexF1])
+
+    results = pd.DataFrame(results)
+    results.columns = ["TrainData","TestData","modelAcc", "modelF1", "lexiconAcc", "lexiconF1"]
+    results.to_csv("Results_LSTM.csv",index = False, index_label = False)
 
 if __name__ == "__main__":
     main()
