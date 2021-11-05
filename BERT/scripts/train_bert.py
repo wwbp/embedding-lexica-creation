@@ -207,7 +207,7 @@ def run_train(tokenizer, model, device: torch.device, args):
             train_metrics['acc'] = accuracy_score(true_values_train, prediction_train)
             train_metrics['f1'] = f1_score(true_values_train, prediction_train)
         else:
-            train_metrics['pearson'], _ = stats.pearsonr(np.concatenate(prediction_train).flatten(), np.concatenate(true_values_train))
+            train_metrics['pearson'], _ = stats.pearsonr(prediction_train.flatten(), true_values_train)
         # Measure how long this epoch took.
         training_time = format_time(time.time() - t0)
 
@@ -270,7 +270,7 @@ def run_train(tokenizer, model, device: torch.device, args):
             val_metrics['acc'] = accuracy_score(true_values_val, prediction_val)
             val_metrics['f1'] = f1_score(true_values_val, prediction_val)
         else:
-            val_metrics['pearson'], _ = stats.pearsonr(np.concatenate(prediction_val).flatten(), np.concatenate(true_values_val))
+            val_metrics['pearson'], _ = stats.pearsonr(prediction_val.flatten(), true_values_val)
             
         # Measure how long the validation run took.
         validation_time = format_time(time.time() - t0)
