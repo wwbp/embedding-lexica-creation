@@ -14,4 +14,5 @@ PYTHONPATH=$rg python $rg/scripts/run_bert.py \
     --max_seq_length=128 \
     --train_batch_size=32 \
     --num_train_epochs=50 \
-    --early_stop
+    --early_stop \
+    --use_lr_model # whether use logistic regression in do_predition

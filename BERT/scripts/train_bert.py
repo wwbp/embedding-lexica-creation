@@ -64,6 +64,8 @@ def parse():
     parser.add_argument("--patience", type=int, default=7, help="patience for early stopping.")
     parser.add_argument("--delta", type=float, default=0, help="delta for early stopping.")
 
+    parser.add_argument("--use_lr_model", action="store_true", help="whetehr use logistic model for evaluation.")
+
     args = parser.parse_args()
     
     return args
@@ -197,25 +199,21 @@ def run_train(tokenizer, model, device: torch.device, args):
 
         # Calculate the average loss over all of the batches.
         avg_train_loss = total_train_loss / len(train_dataloader)
+        logger.info("  Average training loss: {0:.2f}".format(avg_train_loss))
         
         prediction_train = np.concatenate(prediction_train)
         true_values_train = np.concatenate(true_values_train)
         
-        train_metrics = {}
         # Calculate the Pearson Correlation
         if args.task == 'classification':
-            train_metrics['acc'] = accuracy_score(true_values_train, prediction_train)
-            train_metrics['f1'] = f1_score(true_values_train, prediction_train)
+            acc = accuracy_score(true_values_train, prediction_train)
+            f1 = f1_score(true_values_train, prediction_train)
+            logger.info('  Accuracy: {0:.3f}, F1: {0:.3f}'.format(acc, f1))
         else:
-            train_metrics['pearson'], _ = stats.pearsonr(prediction_train.flatten(), true_values_train)
+            pearson, _ = stats.pearsonr(prediction_train.flatten(), true_values_train)
+            logger.info("  Pearson Correlation: {0:.3f}".format(pearson))
         # Measure how long this epoch took.
         training_time = format_time(time.time() - t0)
-
-        logger.info("  Average training loss: {0:.2f}".format(avg_train_loss))
-        if args.task == 'classification':
-            logger.info('  Accuracy: {0:.3f}, F1: {0:.3f}'.format(train_metrics['acc'], train_metrics['f1']))
-        else:
-            logger.info("  Pearson Correlation: {0:.3f}".format(train_metrics['pearson']))
         logger.info("  Training epoch took: {:}".format(training_time))
 
         #Validation Progress
@@ -260,28 +258,24 @@ def run_train(tokenizer, model, device: torch.device, args):
             
         # Calculate the average loss over all of the batches.
         avg_val_loss = total_eval_loss / len(validation_dataloader)
-        
+        logger.info("  Validation Loss: {0:.2f}".format(avg_val_loss))
+
         prediction_val = np.concatenate(prediction_val)
         true_values_val = np.concatenate(true_values_val)
 
-        val_metrics = {}
         # Calculate the Pearson Correlation
         if args.task == 'classification':
-            val_metrics['acc'] = accuracy_score(true_values_val, prediction_val)
-            val_metrics['f1'] = f1_score(true_values_val, prediction_val)
+            acc = accuracy_score(true_values_val, prediction_val)
+            f1 = f1_score(true_values_val, prediction_val)
+            logger.info('  Accuracy: {0:.3f}, F1: {0:.3f}'.format(acc, f1))
+            metric = acc
         else:
-            val_metrics['pearson'], _ = stats.pearsonr(prediction_val.flatten(), true_values_val)
+            pearson, _ = stats.pearsonr(prediction_val.flatten(), true_values_val)
+            logger.info('  Pearson Correlation: {0:.3f}'.format(pearson))
+            metric = pearson
             
         # Measure how long the validation run took.
         validation_time = format_time(time.time() - t0)
-
-        logger.info("  Validation Loss: {0:.2f}".format(avg_val_loss))
-        if args.task == 'classification':
-            logger.info('  Accuracy: {0:.3f}, F1: {0:.3f}'.format(val_metrics['acc'], val_metrics['f1']))
-            metric = val_metrics['acc']
-        else:
-            logger.info('  Pearson Correlation: {0:.3f}'.format(val_metrics['pearson']))
-            metric = val_metrics['pearson']
         logger.info('  Validation took: {:}'.format(validation_time))
 
         if metric < best_metric+args.delta:
@@ -329,6 +323,7 @@ def run_predict(tokenizer, model, device: torch.device, args):
     # Put model in evaluation mode
     model.eval()
 
+    total_loss = 0
     score = []
     label = []
     # Predict 
@@ -339,28 +334,44 @@ def run_predict(tokenizer, model, device: torch.device, args):
 
         with torch.no_grad():        
 
-            _, logits, _ = model(b_input_ids, 
-                                attention_mask=b_input_mask,
-                                labels=b_labels,
-                                use_special_tokens=args.use_special_tokens)
+            loss, logits, _ = model(b_input_ids, 
+                                    attention_mask=b_input_mask,
+                                    labels=b_labels,
+                                    use_special_tokens=args.use_special_tokens)
 
         if args.task == 'classification':
             logits = torch.softmax(logits, dim=1)[:,1]
-            
+
+        total_loss += loss.item()
+
         # Move logits and labels to CPU
         score.append(logits.detach().cpu().numpy())
         label.append(b_labels.to('cpu').numpy())
         
+    avg_loss = total_loss / len(prediction_dataloader)
+    
     score = np.concatenate(score)
     label = np.concatenate(label)
-    score = score.reshape(-1,1)
-    
-    logModel = LogisticRegression()
-    modelAcc = np.round(np.mean(cross_val_score(logModel, score, label, cv=5, scoring='accuracy')),3)
-    modelF1 = np.round(np.mean(cross_val_score(logModel, score, label, cv=5, scoring='f1')),3)
 
-    logger.info("  ACC: {:}".format(modelAcc))
-    logger.info("  F1: {:}".format(modelF1))
+    if args.use_lr_model:
+        score = score.reshape(-1,1)
+        
+        logModel = LogisticRegression()
+        modelAcc = np.round(np.mean(cross_val_score(logModel, score, label, cv=5, scoring='accuracy')),3)
+        modelF1 = np.round(np.mean(cross_val_score(logModel, score, label, cv=5, scoring='f1')),3)
+
+        logger.info("  ACC: {:}".format(modelAcc))
+        logger.info("  F1: {:}".format(modelF1))
+    
+    else:
+        # Calculate the Pearson Correlation
+        if args.task == 'classification':
+            acc = accuracy_score(label, score)
+            f1 = f1_score(label, score)
+            logger.info('  Accuracy: {0:.3f}, F1: {0:.3f}'.format(acc, f1))
+        else:
+            pearson, _ = stats.pearsonr(score.flatten(), label)
+            logger.info('  MSE Loss: {0:.3f}, Pearson Correlation: {0:.3f}'.format(avg_loss, pearson))
     
 
 def main():
