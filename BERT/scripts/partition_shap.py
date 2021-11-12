@@ -13,6 +13,7 @@ import random
 import torch
 
 from utils.utils import get_dataset
+from utils._text import Text
 
 
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(name)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S',
@@ -41,7 +42,7 @@ args = parser.parse_args()
     
 def get_word_rating(data, f, tokenizer, gold=None):    
     logger.info('Getting word values')
-    masker = shap.maskers.Text(tokenizer)
+    masker = Text(tokenizer)
     explainer = shap.explainers.Partition(f, masker)
     shap_values = explainer(data)
 
