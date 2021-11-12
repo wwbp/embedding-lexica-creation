@@ -1,5 +1,5 @@
 global {
-  ducttape_output="generate_rerun"
+  ducttape_output="generate_rerun_ps"
   ducttape_experimental_packages=true
   ducttape_experimental_submitters="true"
   ducttape_experimental_imports="true"
