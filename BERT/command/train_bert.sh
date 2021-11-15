@@ -2,7 +2,7 @@ export rg=$(pwd)/BERT
 export data=[dataFolder] #Define data folder route
 export model=[output_dir] #Define the location where the model should be saved
 
-PYTHONPATH=$rg python $rg/scripts/run_bert.py \
+PYTHONPATH=$rg python $rg/scripts/train_bert.py \
     --dataFolder=$data \
     --dataset=yelp_subset \ #Define the dataset we use
     --output_dir=$model \
@@ -15,4 +15,4 @@ PYTHONPATH=$rg python $rg/scripts/run_bert.py \
     --train_batch_size=32 \
     --num_train_epochs=50 \
     --early_stop \
-    --use_lr_model # whether use logistic regression in do_predition
+    --no_special_tokens #if you want to do a defalut training with special tokens, i.e. [cls], delete this line

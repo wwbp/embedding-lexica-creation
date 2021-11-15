@@ -1490,7 +1490,7 @@ class BertForSequenceClassification(BertPreTrainedModel):
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
-        use_special_tokens=True,
+        no_special_tokens=False,
     ):
         r"""
         labels (:obj:`torch.LongTensor` of shape :obj:`(batch_size,)`, `optional`):
@@ -1512,10 +1512,10 @@ class BertForSequenceClassification(BertPreTrainedModel):
             return_dict=return_dict,
         )
 
-        if use_special_tokens:
-            pooled_output = outputs[1]
-        else:
+        if no_special_tokens:
             pooled_output = self.bert.pooler(torch.mean(outputs[0][:, 1:], dim=1, keepdim=True))
+        else:
+            pooled_output = outputs[1]
 
         pooled_output = self.dropout(pooled_output)
         logits = self.classifier(pooled_output)

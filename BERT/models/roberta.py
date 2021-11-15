@@ -1143,7 +1143,7 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
-        use_special_tokens=True,
+        no_special_tokens=False,
     ):
         r"""
         labels (:obj:`torch.LongTensor` of shape :obj:`(batch_size,)`, `optional`):
@@ -1165,7 +1165,7 @@ class RobertaForSequenceClassification(RobertaPreTrainedModel):
             return_dict=return_dict,
         )
         sequence_output = outputs[0]
-        if not use_special_tokens:
+        if no_special_tokens:
             sequence_output = torch.mean(sequence_output[:, 1:-1, :], dim=1, keepdim=True)
         logits = self.classifier(sequence_output)
 

@@ -605,7 +605,7 @@ class DistilBertForSequenceClassification(DistilBertPreTrainedModel):
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
-        use_special_tokens=True,
+        no_special_tokens=False,
     ):
         r"""
         labels (:obj:`torch.LongTensor` of shape :obj:`(batch_size,)`, `optional`):
@@ -625,7 +625,7 @@ class DistilBertForSequenceClassification(DistilBertPreTrainedModel):
             return_dict=return_dict,
         )
         hidden_state = distilbert_output[0]  # (bs, seq_len, dim)
-        if not use_special_tokens:
+        if no_special_tokens:
             pooled_output = torch.mean(hidden_state, dim=1) # (bs, dim)
         else:
             pooled_output = hidden_state[:, 0]  # (bs, dim)

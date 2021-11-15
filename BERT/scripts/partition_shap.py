@@ -42,15 +42,16 @@ args = parser.parse_args()
     
 def get_word_rating(data, f, tokenizer, gold=None):    
     logger.info('Getting word values')
+    
+    if args.do_alignment:
+        tokenizer_spacy = spacy.load("./fasttext")
+    
     masker = Text(tokenizer)
     explainer = shap.explainers.Partition(f, masker)
     shap_values = explainer(data)
 
     word2values = {}
     word2freq = {}
-    
-    if args.do_alignment:
-        tokenizer_spacy = spacy.load("./fasttext")
 
     for index_sent, sent in enumerate(data):
         sent_bert = tokenizer.convert_ids_to_tokens(

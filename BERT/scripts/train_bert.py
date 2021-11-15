@@ -46,7 +46,7 @@ def parse():
     parser.add_argument("--train_batch_size", type=int, default=32, help="Total batch size for training.")
     parser.add_argument("--eval_batch_size", type=int, default=8, help="Total batch size for eval.")
     parser.add_argument("--predict_batch_size", type=int, default=8, help="Total batch size for prediction.")
-    parser.add_argument("--use_special_tokens", action="store_true", 
+    parser.add_argument("--no_special_tokens", action="store_true", 
                         help="whether use the embeddings of the special tokens in the classifier.")
 
     parser.add_argument("--num_train_epochs", type=int, default=5, help="Total number of training epochs to perform.")
@@ -172,7 +172,7 @@ def run_train(tokenizer, model, device: torch.device, args):
             loss, logits, _ = model(b_input_ids,  
                                     attention_mask=b_input_mask, 
                                     labels=b_labels,
-                                    use_special_tokens=args.use_special_tokens)
+                                    no_special_tokens=args.no_special_tokens)
 
             total_train_loss += loss.item()
             
@@ -241,7 +241,7 @@ def run_train(tokenizer, model, device: torch.device, args):
                 loss, logits, _ = model(b_input_ids, 
                                         attention_mask=b_input_mask,
                                         labels=b_labels,
-                                        use_special_tokens=args.use_special_tokens)
+                                        no_special_tokens=args.no_special_tokens)
 
             # Accumulate the validation loss.
             total_eval_loss += loss.item()
@@ -337,7 +337,7 @@ def run_predict(tokenizer, model, device: torch.device, args):
             loss, logits, _ = model(b_input_ids, 
                                     attention_mask=b_input_mask,
                                     labels=b_labels,
-                                    use_special_tokens=args.use_special_tokens)
+                                    no_special_tokens=args.no_special_tokens)
 
         if args.task == 'classification':
             logits = torch.softmax(logits, dim=1)[:,1]
