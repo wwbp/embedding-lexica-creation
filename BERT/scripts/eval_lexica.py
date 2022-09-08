@@ -91,7 +91,7 @@ def main() -> None:
     train_data1 = ["nrc_joy", "yelp_subset","amazon_finefood_subset","amazon_toys_subset",]
     train_data2 = ["surprise", "sadness", "fear", "anger"]
 
-    test_data1 = train_data1+["song_joy", "dialog_joy", "friends_joy", "emobank"]
+    test_data1 = train_data1+["song_joy", "dialog_joy", "friends_joy", "emobank", "sst2"]
     test_data2 = ["nrc","song","dialog","friends"]
 
     results = [] 
@@ -102,7 +102,10 @@ def main() -> None:
                 lexicon = pd.read_csv(lexFolder+method+'/'+i+'_'+methods[method]+'.csv')
                 if ('dialog' not in j) and ('song' not in j) and ('friends' not in j) and ('emobank' not in j):
                     path = os.path.join(dataFolder, j)
-                    df = pd.read_csv(os.path.join(path, 'test.csv'))
+                    if j != 'sst2':
+                        df = pd.read_csv(os.path.join(path, 'test.csv'))
+                    else:
+                        df = pd.read_csv(os.path.join(path, 'dev.csv'))
                 else:
                     path = os.path.join(dataFolder, 'test_datasets')
                     df = pd.read_csv(os.path.join(path, j+'.csv'))

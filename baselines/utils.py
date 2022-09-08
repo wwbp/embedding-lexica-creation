@@ -106,7 +106,7 @@ class NNNet(nn.Module):
                 
     def forward(self, x):
         
-        x = F.relu(self.fc1(x))1
+        x = F.relu(self.fc1(x))
         # x = self.drop(x)
         x = F.relu(self.fc2(x))
         # x = self.drop(x)
