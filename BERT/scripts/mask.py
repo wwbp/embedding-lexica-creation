@@ -50,7 +50,7 @@ def get_word_rating(model, input_ids, attention_masks, text, tokenizer, gold):
     word2freq = {}
     
     if args.do_alignment:
-        tokenizer_spacy = spacy.load("./fasttext")
+        tokenizer_spacy = spacy.load("../fasttext")
     
     model.to(device)
         

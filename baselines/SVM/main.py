@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    nlp = spacy.load("./fasttext")
+    nlp = spacy.load("../fasttext")
 
     ## Dataset that will be used for creating the lexicon
     lexiconDataset1 = ["nrc_joy", "yelp_subset","amazon_finefood_subset","amazon_toys_subset"]

@@ -41,7 +41,7 @@ def get_word_rating(data, model, tokenizer, gold=None):
     logger.info('Getting word values')
     
     if args.do_alignment:
-        tokenizer_spacy = spacy.load("./fasttext")
+        tokenizer_spacy = spacy.load("../fasttext")
 
     explainer = SequenceClassificationExplainer(model, tokenizer)
     ig_values = []

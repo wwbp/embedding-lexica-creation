@@ -6,6 +6,13 @@
 wget http://wwbp.org/downloads/public_data/dataset-lexicon_project.zip
 ```
 
+## Download Tokenizer
+```bash
+wget https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M.vec.zip
+unzip -o crawl-300d-2M.vec.zip
+python -m spacy init-model -v crawl-300d-2M.vec en fasttext
+```
+
 ## Methods
 
 Each method will have its own directory containing all the code necessary to reproduce the results.

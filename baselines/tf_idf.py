@@ -85,7 +85,7 @@ def main():
     args = parse()
 
     nlp = TfidfVectorizer(use_idf=True)
-    fast = spacy.load('./fasttext')
+    fast = spacy.load('../fasttext')
 
     ## Dataset that will be used for creating the lexicon
     train_data1 = ["nrc_joy", "yelp_subset","amazon_finefood_subset","amazon_toys_subset",]

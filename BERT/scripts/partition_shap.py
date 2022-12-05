@@ -44,7 +44,7 @@ def get_word_rating(data, f, tokenizer, gold=None):
     logger.info('Getting word values')
     
     if args.do_alignment:
-        tokenizer_spacy = spacy.load("./fasttext")
+        tokenizer_spacy = spacy.load("../fasttext")
     
     masker = Text(tokenizer)
     explainer = shap.explainers.Partition(f, masker)

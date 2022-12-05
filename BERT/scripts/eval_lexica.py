@@ -80,7 +80,7 @@ def main() -> None:
     random.seed(42)
     np.random.seed(42)
 
-    tokenizer = spacy.load("./fasttext")
+    tokenizer = spacy.load("../fasttext")
 
     lexFolder = './lexica/'
     dataFolder = './cleandata'

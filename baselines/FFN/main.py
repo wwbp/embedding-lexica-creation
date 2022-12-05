@@ -107,7 +107,7 @@ def generate(train:str, test:List[str], nlp, args, device, model=None)->List[Lis
 def main()-> None:
     args = parse()
 
-    nlp = spacy.load("./fasttext")
+    nlp = spacy.load("../fasttext")
 
     ## Dataset that will be used for creating the lexicon
     train_data1 = ["nrc_joy", "yelp_subset","amazon_finefood_subset","amazon_toys_subset",]
