@@ -82,5 +82,21 @@ Analysis includes dataset information, statistical evaluation results and visual
 If you find this repo useful for your research, please cite
 
 ```bash
-
+@inproceedings{geng-etal-2022-inducing,
+    title = "Inducing Generalizable and Interpretable Lexica",
+    author = "Geng, Yilin  and
+      Wu, Zetian  and
+      Santhosh, Roshan  and
+      Srivastava, Tejas  and
+      Ungar, Lyle  and
+      Sedoc, Jo{\~a}o",
+    booktitle = "Findings of the Association for Computational Linguistics: EMNLP 2022",
+    month = dec,
+    year = "2022",
+    address = "Abu Dhabi, United Arab Emirates",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2022.findings-emnlp.325",
+    pages = "4430--4448",
+    abstract = "Lexica {--} words and associated scores {--} are widely used as simple, interpretable, generalizable language features to predict sentiment, emotions, mental health, and personality. They also provide insight into the psychological features behind those moods and traits. Such lexica, historically created by human experts, are valuable to linguists, psychologists, and social scientists, but they take years of refinement and have limited coverage. In this paper, we investigate how the lexica that provide psycholinguistic insights could be computationally induced and how they should be assessed. We identify generalizability and interpretability as two essential properties of such lexica. We induce lexica using both context-oblivious and context-aware approaches, compare their predictive performance both within the training corpus and across various corpora, and evaluate their quality using crowd-worker assessment. We find that lexica induced from context-oblivious models are more generalizable and interpretable than those from more accurate context-aware transformer models. In addition, lexicon scores can identify explanatory words more reliably than a high performing transformer with feature-importance measures like SHAP.",
+}
 ```
